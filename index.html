@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Montenegro Escalas | Gestão Operacional</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- JSConfetti para o Montenegro Wrapped -->
+  <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+  <!-- PWA Manifest Link -->
+  <link rel="manifest" href="manifest.json">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#14243a',
+              blue: '#244b78',
+              light: '#f2f5f9',
+              accent: '#3b82f6',
+              green: '#10b981',
+              red: '#ef4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+    }
+    .dark .glass-card {
+      background: rgba(30, 41, 59, 0.95);
+    }
+    .gradient-header {
+      background: linear-gradient(135deg, #14243a 0%, #244b78 100%);
+    }
+    .sidebar-transition {
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="bg-[#f2f5f9] dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-300 pb-24">
+
+  <!-- TEMPLATE DA LOGOMARCA SVG -->
+  <template id="tpl-logo">
+    <svg viewBox="0 0 450 130" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 30,95 Q 110,25 190,95 Z" fill="#719e19" />
+      <path d="M 140,95 Q 200,40 260,95 Z" fill="#88b822" />
+      <path d="M 10,95 C 10,75 50,65 75,95 Z" fill="#2d5a27" />
+      <path d="M 260,95 C 200,95 180,105 90,105 C 140,115 210,110 250,98 C 210,95 180,82 250,82 Z" fill="#111827" />
+      <g transform="translate(100, 98) scale(0.4)">
+        <rect x="0" y="0" width="45" height="22" rx="4" fill="#2563eb" />
+        <rect x="3" y="3" width="39" height="8" rx="1" fill="#ffffff" />
+        <circle cx="10" cy="22" r="4" fill="#000000" />
+        <circle cx="35" cy="22" r="4" fill="#000000" />
+      </g>
+      <text x="275" y="65" font-family="Segoe UI, sans-serif" font-size="24" font-weight="300" fill="currentColor">VIAÇÃO</text>
+      <text x="275" y="98" font-family="Segoe UI, sans-serif" font-size="28" font-weight="800" fill="currentColor" letter-spacing="0.5">MONTENEGRO</text>
+    </svg>
+  </template>
+
+  <!-- 1. TELA DE LOGIN -->
+  <div id="telaLogin" class="fixed inset-0 z-50 flex items-center justify-center p-4 gradient-header">
+    <div class="glass-card w-full max-w-md rounded-2xl p-8 shadow-2xl border border-white/20 text-center">
+      <div id="loginLogoContainer" class="w-72 h-20 mx-auto mb-4 text-slate-800 dark:text-white flex items-center justify-center"></div>
+      <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-6">Portal Operacional de Escalas</p>
+
+      <div id="mensagemLogin" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <button type="button" id="cardMotorista" onclick="selecionarPerfil('motorista')" class="p-3 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/35 text-slate-800 dark:text-white font-bold flex flex-col items-center gap-1 transition-all">
+          <span class="text-2xl">🚌</span>
+          <span class="text-xs">Motorista</span>
+        </button>
+        <button type="button" id="cardAdmin" onclick="selecionarPerfil('admin')" class="p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold flex flex-col items-center gap-1 transition-all">
+          <span class="text-2xl">🔑</span>
+          <span class="text-xs">Administrador</span>
+        </button>
+      </div>
+
+      <form id="formLogin" class="space-y-4 text-left">
+        <input type="hidden" id="tipoAcesso" value="motorista">
+        <div>
+          <label for="emailLogin" class="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">E-mail Corporativo</label>
+          <input type="email" id="emailLogin" placeholder="seu.nome@montenegro.com" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+        </div>
+        <div>
+          <label for="senhaLogin" class="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">Senha</label>
+          <input type="password" id="senhaLogin" placeholder="••••••••" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+        </div>
+        <button type="submit" class="w-full py-3.5 bg-[#14243a] hover:bg-[#244b78] text-white font-bold rounded-xl shadow-lg transition-all text-sm mt-2">
+          Entrar no Sistema
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. HEADER -->
+  <header class="gradient-header text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <button id="btnMenu" type="button" class="p-2 hover:bg-white/10 rounded-lg text-xl transition-colors">☰</button>
+        <div class="bg-white px-2 py-1 rounded-lg flex items-center w-40 h-10 text-slate-900">
+          <div id="headerLogoContainer" class="w-full h-full flex items-center justify-center"></div>
+        </div>
+      </div>
+
+      <div class="flex-1 max-w-xs relative hidden sm:block">
+        <input type="text" id="inputPesquisa" placeholder="Pesquisar motorista, linha..." class="w-full pl-9 pr-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white placeholder-slate-300 text-xs focus:outline-none focus:bg-white/20 transition-all">
+        <span class="absolute left-3 top-2 text-xs">🔍</span>
+      </div>
+
+      <div class="flex items-center gap-2" id="headerInfo" style="display: none;">
+        <!-- BOTÃO DE INSTALAÇÃO PWA -->
+        <button id="btnInstalarApp" type="button" class="hidden items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">
+          📥 Instalar App
+        </button>
+
+        <div class="relative">
+          <button id="btnNotificacao" type="button" class="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm relative transition-colors">
+            🔔 <span id="badgeNotificacao" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+          </button>
+          <div id="painelNotificacoes" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 z-50">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">
+              <h4 class="font-bold text-sm text-[#14243a] dark:text-blue-400">Avisos da Direção</h4>
+              <span id="qtdNotificacoes" class="text-[11px] text-slate-500">0 aviso(s)</span>
+            </div>
+            <div id="listaNotificacoesDropdown" class="space-y-2 text-xs">
+              <p class="text-slate-400 italic">Nenhum aviso no momento.</p>
+            </div>
+          </div>
+        </div>
+
+        <button id="btnTema" type="button" class="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition-colors">🌙</button>
+        
+        <!-- PERFIL CLICÁVEL -->
+        <button id="btnAbrirPerfil" type="button" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-mono transition-colors">
+          <div id="avatarHeader" class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-[10px] overflow-hidden">👤</div>
+          <span id="infoUsuario" class="hidden md:inline-block"></span>
+        </button>
+
+        <button id="botaoLogout" type="button" class="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MODAL DE PERFIL DO UTILIZADOR -->
+  <div id="modalPerfil" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-700">
+        <h3 class="font-bold text-base text-[#14243a] dark:text-white">Personalizar o Meu Perfil</h3>
+        <button id="btnFecharPerfil" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg">✕</button>
+      </div>
+
+      <div id="mensagemPerfil" class="hidden p-3 rounded-lg text-xs font-bold"></div>
+
+      <form id="formPerfil" class="space-y-4">
+        <div class="flex items-center gap-4">
+          <div id="previewAvatar" class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl overflow-hidden shadow-md flex-shrink-0">👤</div>
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Selecionar Foto da Galeria</label>
+            <input type="file" id="perfilFotoInput" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+          </div>
+        </div>
+
+        <div>
+          <label for="perfilNome" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nome de Exibição</label>
+          <input id="perfilNome" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
+        </div>
+
+        <div>
+          <label for="perfilDescricao" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Breve Descrição / Bio</label>
+          <textarea id="perfilDescricao" placeholder="Ex.: Motorista titular da Linha 361..." class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs h-20"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-[#14243a] hover:bg-[#244b78] text-white font-bold rounded-xl text-xs transition-colors shadow-sm">
+          Guardar Alterações na Nuvem
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. MENU LATERAL (HAMBÚRGUER) -->
+  <div id="overlaySidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  <aside id="sidebarMenu" class="fixed top-0 left-0 w-72 h-full bg-white dark:bg-slate-800 z-50 p-6 shadow-2xl sidebar-transition -translate-x-full flex flex-col justify-between">
+    <div>
+      <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="font-bold text-lg text-[#14243a] dark:text-white">Navegação</h3>
+        <button id="btnFecharMenu" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl">✕</button>
+      </div>
+
+      <nav class="space-y-1">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3">Operacional</span>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="inicio">🏠 Início / Painel</a>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="escalas">📋 Gerenciar Escalas</a>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="colaboradores">👥 Colaboradores / Motoristas</a>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="frota">🚌 Frota</a>
+
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 block">Comunicação e Ponto</span>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="comunicados">📢 Comunicados</a>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="ocorrencias">🚨 Ocorrências & Justificativas</a>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="ponto">⏱️ Bater Ponto Digital</a>
+
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 block">Especial</span>
+        <a class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors" data-aba="wrapped">📊 Montenegro Wrapped</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- 4. CONTEÚDO PRINCIPAL -->
+  <main id="appConteudo" class="max-w-7xl mx-auto px-4 py-8 space-y-6" style="display: none;">
+    <div>
+      <h2 id="tituloSaudacao" class="text-2xl font-extrabold text-[#14243a] dark:text-white">Carregando...</h2>
+      <p id="subtituloSaudacao" class="text-xs text-slate-500 dark:text-slate-400">Seja bem-vindo ao portal.</p>
+    </div>
+
+    <!-- ABA 1: INÍCIO -->
+    <div id="abaInicio" class="aba-conteudo space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <span class="text-xs font-semibold text-slate-400">Registros de trabalho</span>
+          <div class="text-3xl font-extrabold text-[#14243a] dark:text-white mt-1" id="totalEscalas">0</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <span class="text-xs font-semibold text-slate-400">Motoristas cadastrados</span>
+          <div class="text-3xl font-extrabold text-[#14243a] dark:text-white mt-1" id="totalMotoristas">0</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <span class="text-xs font-semibold text-slate-400">Registros de folga</span>
+          <div class="text-3xl font-extrabold text-[#14243a] dark:text-white mt-1" id="totalFolgas">0</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <h4 class="text-xs font-semibold text-slate-400">🏆 Linha Mais Movimentada</h4>
+          <div class="text-xl font-bold text-[#14243a] dark:text-white mt-2" id="estatisticaLinha">N/A</div>
+          <p class="text-[11px] text-slate-400 mt-1" id="estatisticaLinhaQtd">Nenhuma viagem registrada</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <h4 class="text-xs font-semibold text-slate-400">⏰ Turno Mais Ativo</h4>
+          <div class="text-xl font-bold text-[#14243a] dark:text-white mt-2" id="estatisticaTurno">N/A</div>
+          <p class="text-[11px] text-slate-400 mt-1" id="estatisticaTurnoQtd">Sem escala no período</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <h4 class="text-xs font-semibold text-slate-400">📊 Trabalho vs. Folgas</h4>
+          <div class="text-xl font-bold text-[#14243a] dark:text-white mt-2" id="estatisticaProporcao">0% / 0%</div>
+          <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex mt-3">
+            <div id="barraTrabalho" class="bg-blue-600 h-full" style="width: 50%;"></div>
+            <div id="barraFolga" class="bg-amber-500 h-full" style="width: 50%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" id="layoutPrincipal">
+        <div id="secaoCadastro" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-1">
+          <h3 id="tituloFormulario" class="font-bold text-base text-[#14243a] dark:text-white mb-4">Cadastrar Escala</h3>
+          <div id="mensagem" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+
+          <form id="formEscala" class="space-y-4">
+            <div>
+              <label for="data" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data</label>
+              <input type="date" id="data" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <div>
+              <label for="tipo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Tipo de Registro</label>
+              <select id="tipo" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+                <option value="trabalho">Escala de Trabalho</option>
+                <option value="folga">Folga do Motorista</option>
+              </select>
+            </div>
+            <div>
+              <label for="turno" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Turno</label>
+              <select id="turno" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+                <option value="">Selecione o turno</option>
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+                <option value="Integral">Integral</option>
+              </select>
+            </div>
+            <div>
+              <label for="motorista" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Motorista</label>
+              <select id="motorista" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+                <option value="">Selecione o motorista cadastrado</option>
+              </select>
+            </div>
+            <div id="camposTrabalho" class="grid grid-cols-2 gap-2">
+              <div>
+                <label for="linha" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Linha</label>
+                <input id="linha" placeholder="Ex.: 361" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+              </div>
+              <div>
+                <label for="prefixo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Ônibus</label>
+                <input id="prefixo" placeholder="Ex.: 04520" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+              </div>
+            </div>
+            <div class="pt-2 flex gap-2">
+              <button type="submit" id="botaoSalvar" class="flex-1 py-3 bg-[#14243a] hover:bg-[#244b78] text-white font-bold rounded-xl text-xs transition-colors">Cadastrar Escala</button>
+              <button type="button" id="botaoCancelar" class="hidden px-4 py-3 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-2">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Escalas Cadastradas</h3>
+          <div id="listaEscalas" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 2: ESCALAS -->
+    <div id="abaEscalas" class="aba-conteudo hidden">
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Todas as Escalas Operacionais</h3>
+        <div id="listaEscalasCompleta" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- ABA 3: COLABORADORES -->
+    <div id="abaColaboradores" class="aba-conteudo hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div id="secaoMotoristaCadastro" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-1">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Cadastrar Novo Motorista</h3>
+          <div id="mensagemMotorista" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+          <form id="formMotorista" class="space-y-4">
+            <div>
+              <label for="nomeMotorista" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nome Completo</label>
+              <input id="nomeMotorista" placeholder="Ex.: Robert Souza" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <div>
+              <label for="emailMotorista" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">E-mail Corporativo</label>
+              <input type="email" id="emailMotorista" placeholder="robert.souza@montenegro.com" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <div>
+              <label for="senhaMotorista" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Definir Senha de Acesso</label>
+              <input type="password" id="senhaMotorista" placeholder="••••••••" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <button type="submit" class="w-full py-3 bg-[#14243a] hover:bg-[#244b78] text-white font-bold rounded-xl text-xs transition-colors">Salvar Motorista na Nuvem</button>
+          </form>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-2">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-1">Motoristas Cadastrados na Nuvem</h3>
+          <p class="text-xs text-slate-500 mb-6">Lista oficial sincronizada com status online/offline em tempo real.</p>
+          <div id="listaColaboradores" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 4: FROTA -->
+    <div id="abaFrota" class="aba-conteudo hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div id="secaoFrotaCadastro" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-1">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Cadastrar Veículo</h3>
+          <div id="mensagemFrota" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+          <form id="formFrota" class="space-y-4">
+            <div>
+              <label for="frotaModelo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Modelo do Ônibus</label>
+              <input id="frotaModelo" placeholder="Ex.: Marcopolo Torino" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <div>
+              <label for="frotaPrefixo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Prefixo</label>
+              <input id="frotaPrefixo" placeholder="Ex.: 04520" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <div>
+              <label for="frotaPlaca" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Placa</label>
+              <input id="frotaPlaca" placeholder="Ex.: NQZ-0525" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <button type="submit" class="w-full py-3 bg-[#14243a] hover:bg-[#244b78] text-white font-bold rounded-xl text-xs transition-colors">Salvar Veículo</button>
+          </form>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-2">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Frota Montenegro</h3>
+          <div id="listaFrota" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 5: COMUNICADOS -->
+    <div id="abaComunicados" class="aba-conteudo hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div id="secaoComunicadoCadastro" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-1">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Novo Comunicado</h3>
+          <div id="mensagemComunicado" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+          <form id="formComunicado" class="space-y-4">
+            <div>
+              <label for="comunicadoTitulo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título do Aviso</label>
+              <input id="comunicadoTitulo" placeholder="Ex.: Reunião Operacional" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <div>
+              <label for="comunicadoPrioridade" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Prioridade</label>
+              <select id="comunicadoPrioridade" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+                <option value="Geral">Geral</option>
+                <option value="Importante">Importante</option>
+              </select>
+            </div>
+            <div>
+              <label for="comunicadoTexto" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Mensagem</label>
+              <textarea id="comunicadoTexto" placeholder="Escreva o comunicado aqui..." required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm h-24"></textarea>
+            </div>
+            <button type="submit" class="w-full py-3 bg-[#14243a] hover:bg-[#244b78] text-white font-bold rounded-xl text-xs transition-colors">Publicar Comunicado</button>
+          </form>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-2">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Mural de Comunicados</h3>
+          <div id="listaComunicados" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 6: OCORRÊNCIAS & JUSTIFICATIVAS -->
+    <div id="abaOcorrencias" class="aba-conteudo hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div>
+            <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-1">Registrar Ocorrência / Incidente</h3>
+            <p class="text-xs text-slate-400 mb-4">Problemas com veículo, trânsito ou operação.</p>
+            <div id="mensagemOcorrencia" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+            <form id="formOcorrencia" class="space-y-4">
+              <div>
+                <label for="ocorrenciaData" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data</label>
+                <input type="date" id="ocorrenciaData" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+              </div>
+              <div>
+                <label for="ocorrenciaPrefixo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Ônibus / Linha</label>
+                <input id="ocorrenciaPrefixo" placeholder="Ex.: Ônibus 04520 ou Linha 361" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+              </div>
+              <div>
+                <label for="ocorrenciaDescricao" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Descrição do Incidente</label>
+                <textarea id="ocorrenciaDescricao" placeholder="Descreva o ocorrido..." required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm h-20"></textarea>
+              </div>
+              <button type="submit" class="w-full py-3 bg-[#14243a] hover:bg-[#244b78] text-white font-bold rounded-xl text-xs transition-colors">Registrar Ocorrência</button>
+            </form>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-[#14243a] dark:text-white mb-3">Histórico de Ocorrências</h4>
+            <div id="listaOcorrencias" class="space-y-3 max-h-72 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div>
+            <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-1">Justificar Falta / Ausência de Operação</h3>
+            <p class="text-xs text-slate-400 mb-4">Envie sua justificativa para a direção caso não tenha conseguido rodar.</p>
+            <div id="mensagemJustificativa" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+            <form id="formJustificativa" class="space-y-4">
+              <div>
+                <label for="justData" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data da Ausência</label>
+                <input type="date" id="justData" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+              </div>
+              <div>
+                <label for="justTurno" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Turno Afetado</label>
+                <select id="justTurno" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                  <option value="Noite">Noite</option>
+                  <option value="Integral">Integral</option>
+                </select>
+              </div>
+              <div>
+                <label for="justMotivo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Motivo da Falta / Não Operação</label>
+                <textarea id="justMotivo" placeholder="Explique detalhadamente o porquê..." required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm h-20"></textarea>
+              </div>
+              <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition-colors shadow-sm">Enviar Justificativa à Direção</button>
+            </form>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-[#14243a] dark:text-white mb-3">Histórico de Justificativas Enviadas</h4>
+            <div id="listaJustificativas" class="space-y-3 max-h-72 overflow-y-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 7: BATER PONTO DIGITAL -->
+    <div id="abaPonto" class="aba-conteudo hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-1">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Registro de Ponto em Tempo Real</h3>
+          <div id="mensagemPonto" class="hidden mb-4 p-3 rounded-lg text-xs font-bold"></div>
+          <div class="text-center bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl mb-4 border border-slate-200 dark:border-slate-600">
+            <span class="text-xs text-slate-400 font-bold uppercase block">Hora Atual</span>
+            <span id="relogioDigital" class="text-3xl font-extrabold text-[#14243a] dark:text-white font-mono">00:00:00</span>
+          </div>
+          <form id="formPonto" class="space-y-4">
+            <div>
+              <label for="pontoTipo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Evento</label>
+              <select id="pontoTipo" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+                <option value="Entrada de Turno">Entrada de Turno</option>
+                <option value="Saída para Almoço">Saída para Almoço</option>
+                <option value="Retorno de Almoço">Retorno de Almoço</option>
+                <option value="Fim de Turno">Fim de Turno</option>
+              </select>
+            </div>
+            <div>
+              <label for="pontoPrefixo" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Ônibus Conduzido</label>
+              <input id="pontoPrefixo" placeholder="Ex.: 04520" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <div>
+              <label for="pontoLocal" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Localização/Terminal</label>
+              <input id="pontoLocal" placeholder="Ex.: Terminal Central" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+            </div>
+            <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-colors shadow-lg">
+              ⏱️ Confirmar Registro de Ponto
+            </button>
+          </form>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-2">
+          <h3 class="font-bold text-base text-[#14243a] dark:text-white mb-4">Histórico de Registros de Ponto</h3>
+          <div id="listaPontos" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 8: MONTENEGRO WRAPPED -->
+    <div id="abaWrapped" class="aba-conteudo hidden">
+      <div class="bg-gradient-to-br from-[#14243a] to-[#244b78] p-8 rounded-3xl shadow-2xl text-white text-center space-y-6">
+        <span class="text-xs uppercase tracking-widest font-bold bg-white/10 px-4 py-1.5 rounded-full inline-block">Retrospectiva Montenegro</span>
+        <h2 class="text-3xl font-extrabold">Montenegro Wrapped 🚌✨</h2>
+        <p class="text-xs text-blue-200 max-w-md mx-auto">Resumo automatizado das principais conquistas operacionais da frota e da equipa de motoristas.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+          <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+            <span class="text-4xl block mb-2">🛣️</span>
+            <span class="text-2xl font-extrabold block" id="wrappedKm">0 KM</span>
+            <span class="text-[11px] text-blue-200">Distância Estimada Percorrida</span>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+            <span class="text-4xl block mb-2">⭐</span>
+            <span class="text-xl font-extrabold block" id="wrappedMotorista">N/A</span>
+            <span class="text-[11px] text-blue-200">Destaque Operacional</span>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+            <span class="text-4xl block mb-2">🏁</span>
+            <span class="text-2xl font-extrabold block" id="wrappedEscalas">0 Escalas</span>
+            <span class="text-[11px] text-blue-200">Viagens Cumpridas com Sucesso</span>
+          </div>
+        </div>
+        <button id="btnConfetti" type="button" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 font-bold rounded-xl text-xs transition-colors shadow-lg">
+          🎉 Celebrar Conquistas
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- BARRA DE NAVEGAÇÃO FLUTUANTE ESTILO IPHONE (TRANSPARENTE E APENAS 4 ITENS) -->
+  <nav class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 p-1.5 rounded-full bg-slate-900/60 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/25 shadow-2xl transition-all duration-300">
+    <button onclick="trocarAbaGeral('inicio')" id="nav-inicio" class="item-nav-glass flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-white font-semibold text-xs bg-white/20 shadow-inner backdrop-blur-md">
+      <span class="text-base">🏠</span>
+      <span class="text-xs">Início</span>
+    </button>
+    <button onclick="trocarAbaGeral('escalas')" id="nav-escalas" class="item-nav-glass flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 text-slate-300 hover:text-white font-medium text-xs hover:bg-white/10">
+      <span class="text-base">📋</span>
+      <span class="text-xs">Escalas</span>
+    </button>
+    <button onclick="trocarAbaGeral('ocorrencias')" id="nav-ocorrencias" class="item-nav-glass flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 text-slate-300 hover:text-white font-medium text-xs hover:bg-white/10">
+      <span class="text-base">🚨</span>
+      <span class="text-xs">Ocorrências</span>
+    </button>
+    <button onclick="trocarAbaGeral('ponto')" id="nav-ponto" class="item-nav-glass flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 text-slate-300 hover:text-white font-medium text-xs hover:bg-white/10">
+      <span class="text-base">⏱️</span>
+      <span class="text-xs">Ponto</span>
+    </button>
+  </nav>
+
+  <script>
+    // Configuração Supabase
+    const SUPABASE_URL = "https://peacycxxkbmryvqakxzs.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_cWapXMTPZYvX0gCwUKOULg_f_iCQCcU";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const CHAVE_FROTA = "montenegro_frota_v1";
+    const CHAVE_COMUNICADOS = "montenegro_comunicados_v1";
+    const CHAVE_OCORRENCIAS = "montenegro_ocorrencias_v1";
+    const CHAVE_JUSTIFICATIVAS = "montenegro_justificativas_v1";
+    const CHAVE_PONTOS = "montenegro_pontos_v1";
+
+    const form = document.getElementById("formEscala");
+    const mensagem = document.getElementById("mensagem");
+    const tipo = document.getElementById("tipo");
+    const turno = document.getElementById("turno");
+    const selectMotorista = document.getElementById("motorista");
+    const linha = document.getElementById("linha");
+    const prefixo = document.getElementById("prefixo");
+    const data = document.getElementById("data");
+    const lista = document.getElementById("listaEscalas");
+    const listaCompleta = document.getElementById("listaEscalasCompleta");
+    const inputPesquisa = document.getElementById("inputPesquisa");
+
+    let registros = [];
+    let motoristasCadastrados = [];
+    let frota = carregarLocal(CHAVE_FROTA);
+    let comunicados = carregarLocal(CHAVE_COMUNICADOS);
+    let ocorrencias = carregarLocal(CHAVE_OCORRENCIAS);
+    let justificativas = carregarLocal(CHAVE_JUSTIFICATIVAS);
+    let pontos = carregarLocal(CHAVE_PONTOS);
+
+    let idEditando = null;
+    let usuarioAtual = JSON.parse(localStorage.getItem("montenegro_usuario")) || null;
+
+    // FUNÇÃO UNIFICADA DE TROCA DE ABAS (SERVE PARA BARRA FLUTUANTE E MENU HAMBÚRGUER)
+    function trocarAbaGeral(nomeAba) {
+      const abas = document.querySelectorAll('.aba-conteudo');
+      abas.forEach(aba => aba.classList.add('hidden'));
+
+      const abaAlvo = document.getElementById(`aba${nomeAba.charAt(0).toUpperCase() + nomeAba.slice(1)}`);
+      if (abaAlvo) abaAlvo.classList.remove('hidden');
+
+      // Atualizar o botão em destaque na barra flutuante inferior
+      const botoesNav = document.querySelectorAll('.item-nav-glass');
+      botoesNav.forEach(btn => {
+        btn.className = "item-nav-glass flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 text-slate-300 hover:text-white font-medium text-xs hover:bg-white/10";
+      });
+
+      const btnAtivo = document.getElementById(`nav-${nomeAba}`);
+      if (btnAtivo) {
+        btnAtivo.className = "item-nav-glass flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-white font-semibold text-xs bg-white/20 shadow-inner backdrop-blur-md scale-105 border border-white/30";
+      }
+
+      fecharSidebar();
+    }
+
+    // SISTEMA DE PRESENÇA ONLINE / VISTO POR ÚLTIMO
+    async function atualizarStatusOnline(status) {
+      if (!usuarioAtual || usuarioAtual.cargo !== "motorista" || !usuarioAtual.motoristaId) return;
+
+      const payload = { status: status };
+      if (status === 'offline') {
+        payload.visto_por_ultimo = new Date().toISOString();
+      } else {
+        payload.visto_por_ultimo = null;
+      }
+
+      await supabaseClient.from('motoristas').update(payload).eq('id', usuarioAtual.motoristaId);
+    }
+
+    window.addEventListener("beforeunload", () => {
+      if (usuarioAtual && usuarioAtual.cargo === "motorista" && usuarioAtual.motoristaId) {
+        const payload = JSON.stringify({ status: 'offline', visto_por_ultimo: new Date().toISOString() });
+        navigator.sendBeacon(`${SUPABASE_URL}/rest/v1/motoristas?id=eq.${usuarioAtual.motoristaId}`, payload);
+      }
+    });
+
+    setInterval(() => {
+      if (usuarioAtual && usuarioAtual.cargo === "motorista") {
+        atualizarStatusOnline('online');
+      }
+    }, 30000);
+
+    // LÓGICA DE INSTALAÇÃO PWA
+    let eventoInstalacaoPWA = null;
+    const btnInstalarApp = document.getElementById("btnInstalarApp");
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      eventoInstalacaoPWA = e;
+      if (btnInstalarApp) btnInstalarApp.classList.remove("hidden");
+      if (btnInstalarApp) btnInstalarApp.classList.add("flex");
+    });
+
+    if (btnInstalarApp) {
+      btnInstalarApp.addEventListener("click", async () => {
+        if (!eventoInstalacaoPWA) return;
+        eventoInstalacaoPWA.prompt();
+        const { outcome } = await eventoInstalacaoPWA.userChoice;
+        if (outcome === 'accepted') {
+          btnInstalarApp.classList.add("hidden");
+        }
+        eventoInstalacaoPWA = null;
+      });
+    }
+
+    function renderizarLogos() {
+      const tpl = document.getElementById("tpl-logo").content;
+      document.getElementById("loginLogoContainer").appendChild(tpl.cloneNode(true));
+      document.getElementById("headerLogoContainer").appendChild(tpl.cloneNode(true));
+    }
+    renderizarLogos();
+
+    // Menu Sidebar
+    const btnMenu = document.getElementById("btnMenu");
+    const btnFecharMenu = document.getElementById("btnFecharMenu");
+    const sidebarMenu = document.getElementById("sidebarMenu");
+    const overlaySidebar = document.getElementById("overlaySidebar");
+
+    function abrirSidebar() { sidebarMenu.classList.remove("-translate-x-full"); overlaySidebar.classList.remove("opacity-0", "pointer-events-none"); }
+    function fecharSidebar() { sidebarMenu.classList.add("-translate-x-full"); overlaySidebar.classList.add("opacity-0", "pointer-events-none"); }
+
+    btnMenu.addEventListener("click", abrirSidebar);
+    btnFecharMenu.addEventListener("click", fecharSidebar);
+    overlaySidebar.addEventListener("click", fecharSidebar);
+
+    // Modal Perfil
+    const modalPerfil = document.getElementById("modalPerfil");
+    const btnAbrirPerfil = document.getElementById("btnAbrirPerfil");
+    const btnFecharPerfil = document.getElementById("btnFecharPerfil");
+
+    btnAbrirPerfil.addEventListener("click", () => {
+      if (!usuarioAtual) return;
+      document.getElementById("perfilNome").value = usuarioAtual.nomePersonalizado || usuarioAtual.email.split("@")[0];
+      document.getElementById("perfilDescricao").value = usuarioAtual.descricao || "";
+      document.getElementById("perfilFotoInput").value = "";
+      atualizarPreviewAvatarModal(usuarioAtual.foto, usuarioAtual.nomePersonalizado || usuarioAtual.email);
+      modalPerfil.classList.remove("hidden");
+    });
+
+    btnFecharPerfil.addEventListener("click", () => modalPerfil.classList.add("hidden"));
+
+    document.getElementById("perfilFotoInput").addEventListener("change", (e) => {
+      const ficheiro = e.target.files[0];
+      if (!ficheiro) return;
+
+      const leitor = new FileReader();
+      leitor.onload = function(evt) {
+        usuarioAtual.fotoTemp = evt.target.result;
+        atualizarPreviewAvatarModal(usuarioAtual.fotoTemp, document.getElementById("perfilNome").value);
+      };
+      leitor.readAsDataURL(ficheiro);
+    });
+
+    function atualizarPreviewAvatarModal(url, nome) {
+      const prev = document.getElementById("previewAvatar");
+      if (url && url.trim().length > 0) {
+        prev.innerHTML = `<img src="${escapar(url)}" class="w-full h-full object-cover">`;
+      } else {
+        const letra = (nome || "U").charAt(0).toUpperCase();
+        prev.innerHTML = `<span class="text-white">${letra}</span>`;
+      }
+    }
+
+    document.getElementById("formPerfil").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!usuarioAtual) return;
+
+      usuarioAtual.nomePersonalizado = document.getElementById("perfilNome").value.trim();
+      usuarioAtual.descricao = document.getElementById("perfilDescricao").value.trim();
+      if (usuarioAtual.fotoTemp) {
+        usuarioAtual.foto = usuarioAtual.fotoTemp;
+        delete usuarioAtual.fotoTemp;
+      }
+
+      if (usuarioAtual.cargo === "motorista" && usuarioAtual.motoristaId) {
+        await supabaseClient.from('motoristas').update({
+          nome: usuarioAtual.nomePersonalizado,
+          descricao: usuarioAtual.descricao,
+          foto: usuarioAtual.foto
+        }).eq('id', usuarioAtual.motoristaId);
+      }
+
+      localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
+      aplicarSessao();
+      modalPerfil.classList.add("hidden");
+      await sincronizarDadosNuvem();
+    });
+
+    // Relógio Digital
+    setInterval(() => {
+      const relogio = document.getElementById("relogioDigital");
+      if (relogio) relogio.textContent = new Date().toLocaleTimeString('pt-BR');
+    }, 1000);
+
+    // Notificações Sino
+    const btnNotificacao = document.getElementById("btnNotificacao");
+    const painelNotificacoes = document.getElementById("painelNotificacoes");
+
+    btnNotificacao.addEventListener("click", (e) => {
+      e.stopPropagation();
+      painelNotificacoes.classList.toggle("hidden");
+    });
+    document.addEventListener("click", () => painelNotificacoes.classList.add("hidden"));
+
+    // Modo Escuro
+    const btnTema = document.getElementById("btnTema");
+    if (localStorage.getItem("montenegro_tema") === "dark") {
+      document.documentElement.classList.add("dark");
+      btnTema.textContent = "☀️";
+    }
+    btnTema.addEventListener("click", () => {
+      document.documentElement.classList.toggle("dark");
+      const eEscuro = document.documentElement.classList.contains("dark");
+      btnTema.textContent = eEscuro ? "☀️" : "🌙";
+      localStorage.setItem("montenegro_tema", eEscuro ? "dark" : "light");
+    });
+
+    function selecionarPerfil(tipoPerfil) {
+      document.getElementById('tipoAcesso').value = tipoPerfil;
+      const cardMot = document.getElementById('cardMotorista');
+      const cardAdm = document.getElementById('cardAdmin');
+
+      if (tipoPerfil === 'motorista') {
+        cardMot.className = "p-3 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/35 text-slate-800 dark:text-white font-bold flex flex-col items-center gap-1 transition-all";
+        cardAdm.className = "p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold flex flex-col items-center gap-1 transition-all";
+      } else {
+        cardAdm.className = "p-3 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/35 text-slate-800 dark:text-white font-bold flex flex-col items-center gap-1 transition-all";
+        cardMot.className = "p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold flex flex-col items-center gap-1 transition-all";
+      }
+    }
+
+    function carregarLocal(chave) {
+      try {
+        const dados = JSON.parse(localStorage.getItem(chave) || "[]");
+        return Array.isArray(dados) ? dados : [];
+      } catch { return []; }
+    }
+
+    function guardarLocal(chave, dados) {
+      try {
+        localStorage.setItem(chave, JSON.stringify(dados));
+        return true;
+      } catch { return false; }
+    }
+
+    // SINCRONIZAÇÃO SUPABASE (NUVEM)
+    async function sincronizarDadosNuvem() {
+      try {
+        const { data: resEscalas, error: errEscalas } = await supabaseClient.from('escalas').select('*');
+        if (!errEscalas && resEscalas) registros = resEscalas;
+
+        const { data: resMotoristas, error: errMot } = await supabaseClient.from('motoristas').select('*');
+        if (!errMot && resMotoristas) {
+          motoristasCadastrados = resMotoristas;
+          
+          if (usuarioAtual && usuarioAtual.cargo === "motorista") {
+            const motAtualizado = motoristasCadastrados.find(m => normalizar(m.email) === normalizar(usuarioAtual.email));
+            if (motAtualizado) {
+              usuarioAtual.motoristaId = motAtualizado.id;
+              usuarioAtual.nomePersonalizado = motAtualizado.nome;
+              usuarioAtual.descricao = motAtualizado.descricao || "";
+              usuarioAtual.foto = motAtualizado.foto || "";
+              localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
+              aplicarSessao();
+            }
+          }
+        }
+
+        renderizarTudo();
+      } catch (err) {
+        console.error("Erro ao sincronizar com Supabase:", err);
+      }
+    }
+
+    function mostrarMensagem(msg, classe, el = mensagem) {
+      el.textContent = msg;
+      el.className = `mb-4 p-3 rounded-lg text-xs font-bold ${classe === 'erro' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'} block`;
+    }
+
+    function normalizar(texto) {
+      return String(texto || "").trim().toLocaleLowerCase("pt-BR");
+    }
+
+    function formatarDataHoraRelativa(dataIso) {
+      if (!dataIso) return "";
+      const d = new Date(dataIso);
+      return `visto em ${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    function atualizarCampos() {
+      const eFolga = tipo.value === "folga";
+      linha.required = !eFolga;
+      prefixo.required = !eFolga;
+      document.getElementById("camposTrabalho").style.display = eFolga ? "none" : "grid";
+      if (eFolga) { linha.value = ""; prefixo.value = ""; }
+    }
+    tipo.addEventListener("change", atualizarCampos);
+
+    function popularSelectMotoristas() {
+      if (!selectMotorista) return;
+      selectMotorista.innerHTML = '<option value="">Selecione o motorista cadastrado</option>';
+      motoristasCadastrados.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.nome;
+        opt.textContent = `${m.nome} (${m.email})`;
+        selectMotorista.appendChild(opt);
+      });
+    }
+
+    function conflito(novo) {
+      return registros.find(reg => {
+        if (reg.id === idEditando) return false;
+        if (reg.data !== novo.data) return false;
+        const mesmoMot = normalizar(reg.motorista) === normalizar(novo.motorista);
+        if (novo.tipo === "folga" || reg.tipo === "folga") return mesmoMot;
+        if (mesmoMot && reg.turno === novo.turno) return "motorista";
+        if (normalizar(reg.prefixo) === normalizar(novo.prefixo) && reg.turno === novo.turno) return "veiculo";
+        return false;
+      });
+    }
+
+    function validar(novo) {
+      const enc = conflito(novo);
+      if (!enc) return null;
+      if (enc === "motorista") return "Conflito: este motorista já tem escala neste turno.";
+      if (enc === "veiculo") return "Conflito: este veículo já está atribuído neste turno.";
+      return "Conflito de horários para este motorista.";
+    }
+
+    function escapar(texto) {
+      return String(texto || "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+
+    function dataBrasileira(val) {
+      if (!val) return "";
+      const [ano, mes, dia] = val.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function atualizarSaudacao() {
+      if (!usuarioAtual) return;
+      const hora = new Date().getHours();
+      let saudacao = hora >= 18 || hora < 5 ? "Boa noite" : hora >= 12 ? "Boa tarde" : "Bom dia";
+      let nome = usuarioAtual.nomePersonalizado || usuarioAtual.email.split("@")[0].split(".")[0];
+      nome = nome.charAt(0).toUpperCase() + nome.slice(1);
+
+      document.getElementById("tituloSaudacao").textContent = `${saudacao}, ${nome}.`;
+      document.getElementById("subtituloSaudacao").textContent = usuarioAtual.descricao || `seja bem-vindo · ${new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+    }
+
+    function atualizarEstatisticas() {
+      const trabalhos = registros.filter(r => r.tipo === "trabalho");
+      const folgas = registros.filter(r => r.tipo === "folga");
+      const total = registros.length;
+
+      const contagemLinhas = {};
+      trabalhos.forEach(t => { if (t.linha) contagemLinhas[t.linha] = (contagemLinhas[t.linha] || 0) + 1; });
+      let linhaMaisFrequente = "N/A", maxLinha = 0;
+      for (const l in contagemLinhas) {
+        if (contagemLinhas[l] > maxLinha) { maxLinha = contagemLinhas[l]; linhaMaisFrequente = `Linha ${l}`; }
+      }
+      document.getElementById("estatisticaLinha").textContent = linhaMaisFrequente;
+      document.getElementById("estatisticaLinhaQtd").textContent = maxLinha > 0 ? `${maxLinha} viagem(ns) no total` : "Nenhuma viagem registrada";
+
+      const contagemTurnos = {};
+      trabalhos.forEach(t => { if (t.turno) contagemTurnos[t.turno] = (contagemTurnos[t.turno] || 0) + 1; });
+      let turnoMaisFrequente = "N/A", maxTurno = 0;
+      for (const tr in contagemTurnos) {
+        if (contagemTurnos[tr] > maxTurno) { maxTurno = contagemTurnos[tr]; turnoMaisFrequente = tr; }
+      }
+      document.getElementById("estatisticaTurno").textContent = turnoMaisFrequente;
+      document.getElementById("estatisticaTurnoQtd").textContent = maxTurno > 0 ? `${maxTurno} motorista(s) escalado(s)` : "Sem escala no período";
+
+      let pctTrabalho = total > 0 ? Math.round((trabalhos.length / total) * 100) : 0;
+      let pctFolga = total > 0 ? Math.round((folgas.length / total) * 100) : 0;
+      document.getElementById("estatisticaProporcao").textContent = `${pctTrabalho}% / ${pctFolga}%`;
+      document.getElementById("barraTrabalho").style.width = `${pctTrabalho}%`;
+      document.getElementById("barraFolga").style.width = `${pctFolga}%`;
+
+      document.getElementById("wrappedKm").textContent = `${trabalhos.length * 45} KM`;
+      document.getElementById("wrappedEscalas").textContent = `${trabalhos.length} Escalas`;
+      document.getElementById("wrappedMotorista").textContent = motoristasCadastrados[0]?.nome || "N/A";
+    }
+
+    function renderizarTudo() {
+      const termo = normalizar(inputPesquisa.value);
+      const filtrados = registros.filter(r => 
+        normalizar(r.motorista).includes(termo) || 
+        normalizar(r.linha).includes(termo) || 
+        normalizar(r.prefixo).includes(termo) ||
+        dataBrasileira(r.data).includes(termo)
+      );
+
+      const trabalhos = registros.filter(r => r.tipo === "trabalho");
+      document.getElementById("totalEscalas").textContent = trabalhos.length;
+      document.getElementById("totalFolgas").textContent = registros.filter(r => r.tipo === "folga").length;
+      document.getElementById("totalMotoristas").textContent = motoristasCadastrados.length;
+
+      renderizarListaEscalas(filtrados, lista);
+      renderizarListaEscalas(filtrados, listaCompleta);
+      renderizarColaboradores();
+      renderizarFrota();
+      renderizarComunicados();
+      renderizarOcorrencias();
+      renderizarJustificativas();
+      renderizarPontos();
+      popularSelectMotoristas();
+      atualizarEstatisticas();
+    }
+
+    function renderizarListaEscalas(dados, container) {
+      if (!container) return;
+      container.replaceChildren();
+
+      if (dados.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhum registo de escala encontrado.</p>';
+        return;
+      }
+
+      [...dados]
+        .sort((a, b) => a.data.localeCompare(b.data) || a.turno.localeCompare(b.turno))
+        .forEach(reg => {
+          const item = document.createElement("div");
+          item.className = "p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800";
+          const eFolga = reg.tipo === "folga";
+          
+          const detalhes = eFolga 
+            ? `Motorista: ${escapar(reg.motorista)} · Data: ${dataBrasileira(reg.data)} · Turno: ${escapar(reg.turno)}`
+            : `Motorista: ${escapar(reg.motorista)} · Linha: ${escapar(reg.linha)} · Ônibus: ${escapar(reg.prefixo)} · Data: ${dataBrasileira(reg.data)} · Turno: ${escapar(reg.turno)}`;
+
+          let botoes = "";
+          if (usuarioAtual && usuarioAtual.cargo === "admin") {
+            botoes = `
+              <div class="flex gap-2">
+                <button class="text-xs font-bold text-blue-600 hover:text-blue-800 px-2.5 py-1.5 bg-blue-50 dark:bg-blue-900/40 rounded-lg transition-colors" data-editar="${escapar(reg.id)}">Editar</button>
+                <button class="text-xs font-bold text-red-500 hover:text-red-700 px-2.5 py-1.5 bg-red-50 dark:bg-red-900/40 rounded-lg transition-colors" data-excluir="${escapar(reg.id)}">Excluir</button>
+              </div>
+            `;
+          }
+
+          item.innerHTML = `
+            <div class="text-xs space-y-1">
+              <div class="flex items-center gap-2">
+                <strong class="text-slate-800 dark:text-white font-bold">${dataBrasileira(reg.data)}</strong>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${eFolga ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">${eFolga ? 'FOLGA' : 'TRABALHO'}</span>
+              </div>
+              <p class="text-slate-500">${detalhes}</p>
+            </div>
+            ${botoes}
+          `;
+          container.appendChild(item);
+        });
+    }
+
+    function renderizarColaboradores() {
+      const container = document.getElementById("listaColaboradores");
+      if (!container) return;
+      container.replaceChildren();
+
+      if (motoristasCadastrados.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic col-span-2">Nenhum motorista cadastrado na nuvem.</p>';
+        return;
+      }
+
+      motoristasCadastrados.forEach(mot => {
+        const item = document.createElement("div");
+        item.className = "p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800";
+        
+        const estaOnline = mot.status === 'online';
+        const textoVisto = mot.visto_por_ultimo ? formatarDataHoraRelativa(mot.visto_por_ultimo) : 'Offline';
+
+        let botoesDel = usuarioAtual && usuarioAtual.cargo === "admin" ? `<button class="text-xs font-bold text-red-500 hover:text-red-700 px-2 py-1 bg-red-50 rounded" data-excluir-motorista="${escapar(mot.id)}">Excluir</button>` : '';
+
+        item.innerHTML = `
+          <div>
+            <strong class="text-sm text-slate-800 dark:text-white block">${escapar(mot.nome)}</strong>
+            <span class="text-xs text-slate-400">${escapar(mot.email)}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 ${estaOnline ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}">
+              <span class="w-1.5 h-1.5 rounded-full ${estaOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}"></span>
+              ${estaOnline ? 'Online' : textoVisto}
+            </span>
+            ${botoesDel}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function renderizarFrota() {
+      const container = document.getElementById("listaFrota");
+      if (!container) return;
+      container.replaceChildren();
+
+      if (frota.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic col-span-2">Nenhum veículo cadastrado na frota.</p>';
+        return;
+      }
+
+      frota.forEach(f => {
+        const item = document.createElement("div");
+        item.className = "p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 bg-white dark:bg-slate-800";
+        let botoesDel = usuarioAtual && usuarioAtual.cargo === "admin" ? `<button class="text-xs font-bold text-red-500 hover:text-red-700 px-2.5 py-1.5 bg-red-50 rounded-lg" data-excluir-frota="${escapar(f.id)}">Remover</button>` : '';
+
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <strong class="text-sm text-slate-800 dark:text-white">${escapar(f.modelo)}</strong>
+            <span class="text-xs font-bold text-blue-600">Prefixo: ${escapar(f.prefixo)}</span>
+          </div>
+          <div class="flex justify-between items-center text-xs text-slate-400">
+            <span>Placa: ${escapar(f.placa)}</span>
+            ${botoesDel}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function renderizarComunicados() {
+      const container = document.getElementById("listaComunicados");
+      const dropdown = document.getElementById("listaNotificacoesDropdown");
+      const badge = document.getElementById("badgeNotificacao");
+      const qtdText = document.getElementById("qtdNotificacoes");
+
+      if (container) container.replaceChildren();
+      if (dropdown) dropdown.replaceChildren();
+
+      if (comunicados.length === 0) {
+        if (container) container.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhum comunicado publicado.</p>';
+        if (dropdown) dropdown.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhum aviso no momento.</p>';
+        badge.classList.add("hidden");
+        qtdText.textContent = "0 aviso(s)";
+        return;
+      }
+
+      badge.textContent = comunicados.length;
+      badge.classList.remove("hidden");
+      qtdText.textContent = `${comunicados.length} aviso(s)`;
+
+      comunicados.forEach((c, idx) => {
+        if (container) {
+          const item = document.createElement("div");
+          item.className = "p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 bg-white dark:bg-slate-800";
+          let botoesDel = usuarioAtual && usuarioAtual.cargo === "admin" ? `<button class="text-xs font-bold text-red-500 hover:text-red-700 px-2.5 py-1.5 bg-red-50 rounded-lg" data-excluir-comunicado="${escapar(c.id)}">Excluir</button>` : '';
+
+          item.innerHTML = `
+            <div class="flex justify-between items-center">
+              <strong class="text-sm text-slate-800 dark:text-white">${escapar(c.titulo)}</strong>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${c.prioridade === 'Importante' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${escapar(c.prioridade)}</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-300">${escapar(c.texto)}</p>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700">
+              <small class="text-[10px] text-slate-400">Publicado por ${escapar(c.autor)} em ${escapar(c.data)}</small>
+              ${botoesDel}
+            </div>
+          `;
+          container.appendChild(item);
+        }
+
+        if (dropdown && idx < 3) {
+          const dropItem = document.createElement("div");
+          dropItem.className = "p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg space-y-1";
+          dropItem.innerHTML = `
+            <strong class="text-xs text-slate-800 dark:text-white block">${escapar(c.titulo)}</strong>
+            <p class="text-[11px] text-slate-500">${escapar(c.texto)}</p>
+          `;
+          dropdown.appendChild(dropItem);
+        }
+      });
+    }
+
+    function renderizarOcorrencias() {
+      const container = document.getElementById("listaOcorrencias");
+      if (!container) return;
+      container.replaceChildren();
+
+      if (ocorrencias.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhuma ocorrência registrada.</p>';
+        return;
+      }
+
+      ocorrencias.forEach(o => {
+        const item = document.createElement("div");
+        item.className = "p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 bg-white dark:bg-slate-800";
+        let botoesDel = usuarioAtual && usuarioAtual.cargo === "admin" ? `<button class="text-xs font-bold text-red-500 hover:text-red-700 px-2.5 py-1.5 bg-red-50 rounded-lg" data-excluir-ocorrencia="${escapar(o.id)}">Remover</button>` : '';
+
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <strong class="text-sm text-slate-800 dark:text-white">${escapar(o.prefixo)}</strong>
+            <span class="text-xs text-slate-400">${dataBrasileira(o.data)}</span>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300">${escapar(o.descricao)}</p>
+          <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700">
+            <small class="text-[10px] text-slate-400">Relatado por ${escapar(o.autor)}</small>
+            ${botoesDel}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function renderizarJustificativas() {
+      const container = document.getElementById("listaJustificativas");
+      if (!container) return;
+      container.replaceChildren();
+
+      if (justificativas.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhuma justificativa enviada.</p>';
+        return;
+      }
+
+      justificativas.forEach(j => {
+        const item = document.createElement("div");
+        item.className = "p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 bg-white dark:bg-slate-800";
+        let botoesDel = usuarioAtual && usuarioAtual.cargo === "admin" ? `<button class="text-xs font-bold text-red-500 hover:text-red-700 px-2.5 py-1.5 bg-red-50 rounded-lg" data-excluir-justificativa="${escapar(j.id)}">Remover</button>` : '';
+
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <strong class="text-sm text-amber-700 dark:text-amber-400">Ausência em ${dataBrasileira(j.data)} (${escapar(j.turno)})</strong>
+            <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">JUSTIFICADA</span>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300">${escapar(j.motivo)}</p>
+          <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700">
+            <small class="text-[10px] text-slate-400">Motorista: ${escapar(j.autor)}</small>
+            ${botoesDel}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function renderizarPontos() {
+      const container = document.getElementById("listaPontos");
+      if (!container) return;
+      container.replaceChildren();
+
+      if (pontos.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhum registro de ponto efetuado.</p>';
+        return;
+      }
+
+      pontos.forEach(p => {
+        const item = document.createElement("div");
+        item.className = "p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800";
+        item.innerHTML = `
+          <div class="space-y-1">
+            <strong class="text-sm text-slate-800 dark:text-white block">${escapar(p.tipo)} (${escapar(p.hora)})</strong>
+            <p class="text-xs text-slate-500">Ônibus: ${escapar(p.prefixo)} · Terminal: ${escapar(p.local)}</p>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">${dataBrasileira(p.data)}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function aplicarSessao() {
+      const telaLogin = document.getElementById("telaLogin");
+      const headerInfo = document.getElementById("headerInfo");
+      const appConteudo = document.getElementById("appConteudo");
+
+      if (!usuarioAtual) {
+        telaLogin.style.display = "flex";
+        headerInfo.style.display = "none";
+        appConteudo.style.display = "none";
+        return;
+      }
+
+      telaLogin.style.display = "none";
+      headerInfo.style.display = "flex";
+      appConteudo.style.display = "block";
+
+      const eAdmin = usuarioAtual.cargo === "admin";
+      const nomeExibicao = usuarioAtual.nomePersonalizado || usuarioAtual.email.split("@")[0];
+      document.getElementById("infoUsuario").textContent = `${eAdmin ? 'Gestão' : 'Motorista'}: ${nomeExibicao}`;
+
+      const avatarHeader = document.getElementById("avatarHeader");
+      if (usuarioAtual.foto && usuarioAtual.foto.trim().length > 0) {
+        avatarHeader.innerHTML = `<img src="${escapar(usuarioAtual.foto)}" class="w-full h-full object-cover">`;
+      } else {
+        avatarHeader.innerHTML = `<span class="text-white">${nomeExibicao.charAt(0).toUpperCase()}</span>`;
+      }
+
+      document.getElementById("secaoCadastro").style.display = eAdmin ? "block" : "none";
+      document.getElementById("secaoMotoristaCadastro").style.display = eAdmin ? "block" : "none";
+      document.getElementById("secaoFrotaCadastro").style.display = eAdmin ? "block" : "none";
+      document.getElementById("secaoComunicadoCadastro").style.display = eAdmin ? "block" : "none";
+      document.getElementById("layoutPrincipal").classList.toggle("lg:grid-cols-3", eAdmin);
+
+      atualizarSaudacao();
+      sincronizarDadosNuvem();
+    }
+
+    // LISTENER DE CLIQUE NO MENU HAMBÚRGUER (LATERAL)
+    const itensMenuLateral = document.querySelectorAll(".menu-item");
+    itensMenuLateral.forEach(item => {
+      item.addEventListener("click", () => {
+        const abaAlvo = item.dataset.aba;
+        trocarAbaGeral(abaAlvo);
+      });
+    });
+
+    inputPesquisa.addEventListener("input", renderizarTudo);
+
+    document.getElementById("formLogin").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("emailLogin").value.trim().toLowerCase();
+      const senha = document.getElementById("senhaLogin").value;
+      const tipoAcesso = document.getElementById("tipoAcesso").value;
+      const msgLogin = document.getElementById("mensagemLogin");
+
+      msgLogin.textContent = "";
+      msgLogin.className = "hidden";
+
+      if (tipoAcesso === "admin") {
+        if (!email.includes(".admin@montenegro.com") || senha !== "admin123") {
+          msgLogin.textContent = "E-mail ou senha de Administrador incorretos!";
+          msgLogin.className = "mb-4 p-3 rounded-lg text-xs font-bold bg-red-100 text-red-800 block";
+          return;
+        }
+        usuarioAtual = { email, cargo: "admin", nomePersonalizado: "Administração", descricao: "Gestão Operacional", foto: "" };
+      } else {
+        const { data: resMot } = await supabaseClient.from('motoristas').select('*').eq('email', email);
+        const motEncontrado = resMot && resMot.length > 0 ? resMot[0] : null;
+
+        if (!motEncontrado || motEncontrado.senha !== senha) {
+          msgLogin.textContent = "E-mail ou senha incorretos para este motorista!";
+          msgLogin.className = "mb-4 p-3 rounded-lg text-xs font-bold bg-red-100 text-red-800 block";
+          return;
+        }
+
+        usuarioAtual = {
+          email: motEncontrado.email,
+          cargo: "motorista",
+          motoristaId: motEncontrado.id,
+          nomePersonalizado: motEncontrado.nome,
+          descricao: motEncontrado.descricao || "",
+          foto: motEncontrado.foto || ""
+        };
+
+        await atualizarStatusOnline('online');
+      }
+
+      localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
+      aplicarSessao();
+    });
+
+    document.getElementById("botaoLogout").addEventListener("click", async () => {
+      await atualizarStatusOnline('offline');
+      localStorage.removeItem("montenegro_usuario");
+      usuarioAtual = null;
+      aplicarSessao();
+    });
+
+    // CADASTRAR MOTORISTA NO SUPABASE
+    document.getElementById("formMotorista").addEventListener("submit", async e => {
+      e.preventDefault();
+      const nome = document.getElementById("nomeMotorista").value.trim();
+      const email = document.getElementById("emailMotorista").value.trim().toLowerCase();
+      const senha = document.getElementById("senhaMotorista").value;
+
+      const { error } = await supabaseClient.from('motoristas').insert([{ 
+        nome, 
+        email, 
+        senha, 
+        status: 'offline',
+        visto_por_ultimo: new Date().toISOString()
+      }]);
+
+      if (error) {
+        mostrarMensagem("Erro ao salvar motorista na nuvem.", "erro", document.getElementById("mensagemMotorista"));
+        return;
+      }
+
+      e.target.reset();
+      await sincronizarDadosNuvem();
+      mostrarMensagem("Motorista salvo na nuvem com sucesso!", "sucesso", document.getElementById("mensagemMotorista"));
+    });
+
+    form.addEventListener("submit", async evento => {
+      evento.preventDefault();
+      document.getElementById("mensagem").textContent = "";
+
+      const novo = {
+        data: data.value,
+        tipo: tipo.value,
+        turno: turno.value,
+        motorista: selectMotorista.value.trim(),
+        linha: tipo.value === "trabalho" ? linha.value.trim() : "",
+        prefixo: tipo.value === "trabalho" ? prefixo.value.trim() : ""
+      };
+
+      if (!novo.motorista || !novo.data || !novo.turno) {
+        mostrarMensagem("Preencha data, turno e selecione o motorista.", "erro");
+        return;
+      }
+      const erro = validar(novo);
+      if (erro) { mostrarMensagem(erro, "erro"); return; }
+
+      if (idEditando) {
+        const { error } = await supabaseClient.from('escalas').update(novo).eq('id', idEditando);
+        if (error) { mostrarMensagem("Erro ao atualizar escala na nuvem.", "erro"); return; }
+      } else {
+        const { error } = await supabaseClient.from('escalas').insert([novo]);
+        if (error) { mostrarMensagem("Erro ao salvar escala na nuvem.", "erro"); return; }
+      }
+
+      form.reset();
+      idEditando = null;
+      document.getElementById("tituloFormulario").textContent = "Cadastrar Escala";
+      document.getElementById("botaoSalvar").textContent = "Cadastrar Escala";
+      document.getElementById("botaoCancelar").classList.add("hidden");
+      atualizarCampos();
+      await sincronizarDadosNuvem();
+      mostrarMensagem("Registo guardado na nuvem com sucesso!", "sucesso");
+    });
+
+    document.getElementById("formFrota").addEventListener("submit", e => {
+      e.preventDefault();
+      frota.push({
+        id: String(Date.now()),
+        modelo: document.getElementById("frotaModelo").value.trim(),
+        prefixo: document.getElementById("frotaPrefixo").value.trim(),
+        placa: document.getElementById("frotaPlaca").value.trim()
+      });
+      guardarLocal(CHAVE_FROTA, frota);
+      e.target.reset();
+      renderizarTudo();
+      mostrarMensagem("Veículo adicionado com sucesso!", "sucesso", document.getElementById("mensagemFrota"));
+    });
+
+    document.getElementById("formComunicado").addEventListener("submit", e => {
+      e.preventDefault();
+      comunicados.unshift({
+        id: String(Date.now()),
+        titulo: document.getElementById("comunicadoTitulo").value.trim(),
+        prioridade: document.getElementById("comunicadoPrioridade").value,
+        texto: document.getElementById("comunicadoTexto").value.trim(),
+        data: new Date().toLocaleDateString('pt-BR'),
+        autor: usuarioAtual.nomePersonalizado || usuarioAtual.email
+      });
+      guardarLocal(CHAVE_COMUNICADOS, comunicados);
+      e.target.reset();
+      renderizarTudo();
+      mostrarMensagem("Comunicado publicado!", "sucesso", document.getElementById("mensagemComunicado"));
+    });
+
+    document.getElementById("formOcorrencia").addEventListener("submit", e => {
+      e.preventDefault();
+      ocorrencias.unshift({
+        id: String(Date.now()),
+        data: document.getElementById("ocorrenciaData").value,
+        prefixo: document.getElementById("ocorrenciaPrefixo").value.trim(),
+        descricao: document.getElementById("ocorrenciaDescricao").value.trim(),
+        autor: usuarioAtual.nomePersonalizado || usuarioAtual.email
+      });
+      guardarLocal(CHAVE_OCORRENCIAS, ocorrencias);
+      e.target.reset();
+      renderizarTudo();
+      mostrarMensagem("Ocorrência registrada!", "sucesso", document.getElementById("mensagemOcorrencia"));
+    });
+
+    document.getElementById("formJustificativa").addEventListener("submit", e => {
+      e.preventDefault();
+      justificativas.unshift({
+        id: String(Date.now()),
+        data: document.getElementById("justData").value,
+        turno: document.getElementById("justTurno").value,
+        motivo: document.getElementById("justMotivo").value.trim(),
+        autor: usuarioAtual.nomePersonalizado || usuarioAtual.email
+      });
+      guardarLocal(CHAVE_JUSTIFICATIVAS, justificativas);
+      e.target.reset();
+      renderizarTudo();
+      mostrarMensagem("Justificativa enviada à direção com sucesso!", "sucesso", document.getElementById("mensagemJustificativa"));
+    });
+
+    document.getElementById("formPonto").addEventListener("submit", e => {
+      e.preventDefault();
+      pontos.unshift({
+        id: String(Date.now()),
+        tipo: document.getElementById("pontoTipo").value,
+        prefixo: document.getElementById("pontoPrefixo").value.trim(),
+        local: document.getElementById("pontoLocal").value.trim(),
+        hora: new Date().toLocaleTimeString('pt-BR'),
+        data: new Date().toISOString().split("T")[0]
+      });
+      guardarLocal(CHAVE_PONTOS, pontos);
+      e.target.reset();
+      renderizarTudo();
+      mostrarMensagem("Ponto registrado!", "sucesso", document.getElementById("mensagemPonto"));
+    });
+
+    document.addEventListener("click", async evento => {
+      const editId = evento.target.dataset.editar;
+      const excId = evento.target.dataset.excluir;
+      const excFrotaId = evento.target.dataset.excluirFrota;
+      const excComId = evento.target.dataset.excluirComunicado;
+      const excOcoId = evento.target.dataset.excluirOcorrencia;
+      const excJustId = evento.target.dataset.excluirJustificativa;
+      const excMotId = evento.target.dataset.excluirMotorista;
+
+      if (editId) {
+        const reg = registros.find(r => r.id == editId);
+        if (!reg) return;
+        idEditando = reg.id;
+        data.value = reg.data;
+        tipo.value = reg.tipo;
+        turno.value = reg.turno;
+        selectMotorista.value = reg.motorista;
+        linha.value = reg.linha;
+        prefixo.value = reg.prefixo;
+        atualizarCampos();
+        document.getElementById("tituloFormulario").textContent = "Editar Escala";
+        document.getElementById("botaoSalvar").textContent = "Atualizar Escala";
+        document.getElementById("botaoCancelar").classList.remove("hidden");
+        document.getElementById("tituloFormulario").scrollIntoView({ behavior: "smooth" });
+      }
+
+      if (excId) {
+        if (!confirm("Deseja excluir este registo da nuvem?")) return;
+        await supabaseClient.from('escalas').delete().eq('id', excId);
+        await sincronizarDadosNuvem();
+      }
+
+      if (excFrotaId) {
+        if (!confirm("Deseja remover este veículo?")) return;
+        frota = frota.filter(v => v.id !== excFrotaId);
+        guardarLocal(CHAVE_FROTA, frota);
+        renderizarTudo();
+      }
+
+      if (excComId) {
+        if (!confirm("Deseja excluir este comunicado?")) return;
+        comunicados = comunicados.filter(c => c.id !== excComId);
+        guardarLocal(CHAVE_COMUNICADOS, comunicados);
+        renderizarTudo();
+      }
+
+      if (excOcoId) {
+        if (!confirm("Deseja remover esta ocorrência?")) return;
+        ocorrencias = ocorrencias.filter(o => o.id !== excOcoId);
+        guardarLocal(CHAVE_OCORRENCIAS, ocorrencias);
+        renderizarTudo();
+      }
+
+      if (excJustId) {
+        if (!confirm("Deseja remover esta justificativa?")) return;
+        justificativas = justificativas.filter(j => j.id !== excJustId);
+        guardarLocal(CHAVE_JUSTIFICATIVAS, justificativas);
+        renderizarTudo();
+      }
+
+      if (excMotId) {
+        if (!confirm("Deseja remover este motorista da nuvem?")) return;
+        await supabaseClient.from('motoristas').delete().eq('id', excMotId);
+        await sincronizarDadosNuvem();
+      }
+    });
+
+    document.getElementById("botaoCancelar").addEventListener("click", () => {
+      form.reset();
+      idEditando = null;
+      document.getElementById("tituloFormulario").textContent = "Cadastrar Escala";
+      document.getElementById("botaoSalvar").textContent = "Cadastrar Escala";
+      document.getElementById("botaoCancelar").classList.add("hidden");
+      atualizarCampos();
+    });
+
+    document.getElementById("btnConfetti").addEventListener("click", () => {
+      const jsConfetti = new JSConfetti();
+      jsConfetti.addConfetti();
+    });
+
+    atualizarCampos();
+    aplicarSessao();
+  </script>
+</body>
+</html>
