@@ -692,12 +692,10 @@
       localStorage.setItem("montenegro_ultimo_email", email);
 
       if (tipoAcesso === "admin") {
-        // Validação flexível para qualquer e-mail de admin contendo .admin@montenegro.com e senha admin123
         if (!email.includes(".admin@montenegro.com") || senha !== "admin123") {
           alert("Credenciais de Administrador incorretas! (Senha padrão: admin123)");
           return;
         }
-        // Extrai o nome antes de .admin para exibir no perfil automaticamente
         const nomeAdminExtraido = email.split(".admin")[0];
         const nomeFormatado = nomeAdminExtraido.charAt(0).toUpperCase() + nomeAdminExtraido.slice(1) + " (Administração)";
         
@@ -726,9 +724,17 @@
 
     document.getElementById("botaoLogout").addEventListener("click", () => {
       fecharSidebar();
-      localStorage.removeItem("montenegro_usuario");
-      usuarioAtual = null;
-      aplicarSessao();
+      if (usuarioAtual && usuarioAtual.motoristaId) {
+        supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId).then(() => {
+          localStorage.removeItem("montenegro_usuario");
+          usuarioAtual = null;
+          aplicarSessao();
+        });
+      } else {
+        localStorage.removeItem("montenegro_usuario");
+        usuarioAtual = null;
+        aplicarSessao();
+      }
     });
 
     async function atualizarPresencaOnline() {
@@ -737,6 +743,12 @@
         await supabaseClient.from('motoristas').update({ ultimo_acesso: agoraIso }).eq('id', usuarioAtual.motoristaId);
       }
     }
+
+    setInterval(() => {
+      if (usuarioAtual && usuarioAtual.motoristaId) {
+        atualizarPresencaOnline();
+      }
+    }, 30000);
 
     function aplicarSessao() {
       if (!usuarioAtual) {
@@ -860,6 +872,19 @@
         sincronizar();
       }
     });
+
+    // 🟢 FUNÇÃO PARA EXCLUIR ESCALA DIRETO DO SUPABASE
+    async function excluirEscala(id) {
+      if (confirm("Tem certeza que deseja excluir esta escala programada?")) {
+        const { error } = await supabaseClient.from('escalas').delete().eq('id', id);
+        if (error) {
+          alert("Erro ao excluir escala: " + error.message);
+        } else {
+          alert("Escala excluída com sucesso!");
+          sincronizar();
+        }
+      }
+    }
 
     document.getElementById("formComunicado").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -1018,7 +1043,10 @@
     }
 
     async function sincronizar() {
-      atualizarPresencaOnline();
+      if (usuarioAtual && usuarioAtual.motoristaId) {
+        const agoraIso = new Date().toISOString();
+        await supabaseClient.from('motoristas').update({ ultimo_acesso: agoraIso }).eq('id', usuarioAtual.motoristaId);
+      }
 
       const { data: resEscalas } = await supabaseClient.from('escalas').select('*');
       if (resEscalas) registros = resEscalas;
@@ -1046,11 +1074,19 @@
     function renderizarEscalas() {
       const c = document.getElementById("listaEscalas");
       if (registros.length === 0) { c.innerHTML = `<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400 col-span-3">Nenhuma escala cadastrada.</div>`; return; }
+      
+      const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
+
       c.innerHTML = registros.map(e => `
-        <div class="p-5 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-2 shadow-sm">
-          <div class="flex justify-between text-xs font-bold text-blue-600 dark:text-blue-400"><span>📅 ${e.data} (${e.turno})</span><span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 text-[10px]">${e.tipo || 'Escala'}</span></div>
-          <div class="text-sm font-black text-slate-800 dark:text-white">Motorista: ${e.motorista}</div>
-          <div class="text-xs text-slate-500">Linha: ${e.linha} | Carro: ${e.prefixo}</div>
+        <div class="p-5 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-2 shadow-sm flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+              <span>📅 ${e.data} (${e.turno})</span>
+            </div>
+            <div class="text-sm font-black text-slate-800 dark:text-white">Motorista: ${e.motorista}</div>
+            <div class="text-xs text-slate-500">Linha: ${e.linha} | Carro: ${e.prefixo}</div>
+          </div>
+          ${isAdmin ? `<button onclick="excluirEscala('${e.id}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-[10px] transition-colors shrink-0">🗑️ Excluir</button>` : ''}
         </div>
       `).join('');
     }
@@ -1062,7 +1098,7 @@
       const agora = new Date();
       const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
 
-      c.innerHTML = motoristasCadastrados.map(m => {
+      c.innerHTML = motoristasCadastroredas = motoristasCadastrados.map(m => {
         let statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium">⚪ Offline</span>`;
         
         if (m.ultimo_acesso) {
@@ -1070,7 +1106,7 @@
           const diferencaMinutos = Math.floor((agora - dataAcesso) / (1000 * 60));
           const horaFormatada = dataAcesso.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-          if (diferencaMinutos <= 5) {
+          if (diferencaMinutos <= 2) {
             statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-bold">🟢 Online</span>`;
           } else {
             statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium">⚪ Visto às ${horaFormatada}</span>`;
@@ -1095,7 +1131,7 @@
 
     function filtrarConteudo(termo) {
       const t = termo.toLowerCase();
-      document.querySelectorAll('#listaEscalas > div').forEach(card => card.style.display = card.textContent.toLowerCase().includes(t) ? 'block' : 'none');
+      document.querySelectorAll('#listaEscalas > div').forEach(card => card.style.display = card.textContent.toLowerCase().includes(t) ? 'flex' : 'none');
       document.querySelectorAll('#listaColaboradores > div').forEach(card => card.style.display = card.textContent.toLowerCase().includes(t) ? 'flex' : 'none');
       document.querySelectorAll('#listaFrota > div').forEach(card => card.style.display = card.textContent.toLowerCase().includes(t) ? 'flex' : 'none');
       document.querySelectorAll('#listaComunicados > div').forEach(card => card.style.display = card.textContent.toLowerCase().includes(t) ? 'block' : 'none');
