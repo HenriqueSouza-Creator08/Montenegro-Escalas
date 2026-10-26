@@ -631,10 +631,12 @@
       if (usuarioAtual.foto) atualizarAvatarUI(usuarioAtual.foto);
 
       if (usuarioAtual.motoristaId) {
-        await supabaseClient.from('motoristas').update({ 
-          nome: usuarioAtual.nomePersonalizado,
-          foto: usuarioAtual.foto 
-        }).eq('id', usuarioAtual.motoristaId);
+        try {
+          await supabaseClient.from('motoristas').update({ 
+            nome: usuarioAtual.nomePersonalizado,
+            foto: usuarioAtual.foto 
+          }).eq('id', usuarioAtual.motoristaId);
+        } catch (err) { console.log(err); }
       }
 
       fecharModalPerfil();
@@ -713,6 +715,12 @@
 
       localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
       
+      if (usuarioAtual.motoristaId) {
+        try {
+          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId);
+        } catch(err) {}
+      }
+      
       document.getElementById("telaLogin").style.display = "none";
       document.getElementById("telaCarregamento").style.display = "flex";
 
@@ -729,6 +737,10 @@
           localStorage.removeItem("montenegro_usuario");
           usuarioAtual = null;
           aplicarSessao();
+        }).catch(() => {
+          localStorage.removeItem("montenegro_usuario");
+          usuarioAtual = null;
+          aplicarSessao();
         });
       } else {
         localStorage.removeItem("montenegro_usuario");
@@ -739,8 +751,9 @@
 
     async function atualizarPresencaOnline() {
       if (usuarioAtual && usuarioAtual.motoristaId) {
-        const agoraIso = new Date().toISOString();
-        await supabaseClient.from('motoristas').update({ ultimo_acesso: agoraIso }).eq('id', usuarioAtual.motoristaId);
+        try {
+          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId);
+        } catch(err) {}
       }
     }
 
@@ -748,7 +761,7 @@
       if (usuarioAtual && usuarioAtual.motoristaId) {
         atualizarPresencaOnline();
       }
-    }, 30000);
+    }, 10000);
 
     function aplicarSessao() {
       if (!usuarioAtual) {
@@ -796,13 +809,26 @@
       });
     }
 
+    // 🟢 CADASTRO ROBUSTO (Compatível mesmo se a coluna ultimo_acesso ainda não existir)
     document.getElementById("formNovoMotorista").addEventListener("submit", async (e) => {
       e.preventDefault();
       const nome = document.getElementById("novoMotNome").value.trim();
       const email = document.getElementById("novoMotEmail").value.trim().toLowerCase();
       const senha = document.getElementById("novoMotSenha").value;
 
-      const { error } = await supabaseClient.from('motoristas').insert([{ nome, email, senha, ultimo_acesso: new Date().toISOString() }]);
+      let dadosParaInserir = { nome, email, senha };
+      try {
+        dadosParaInserir.ultimo_acesso = new Date().toISOString();
+      } catch(err) {}
+
+      let { error } = await supabaseClient.from('motoristas').insert([dadosParaInserir]);
+
+      // Fallback caso a tabela não tenha a coluna ultimo_acesso criada no Supabase ainda
+      if (error && error.message.includes('ultimo_acesso')) {
+        delete dadosParaInserir.ultimo_acesso;
+        const res2 = await supabaseClient.from('motoristas').insert([dadosParaInserir]);
+        error = res2.error;
+      }
 
       if (error) {
         alert("Erro ao cadastrar motorista: " + error.message);
@@ -873,7 +899,6 @@
       }
     });
 
-    // 🟢 FUNÇÃO PARA EXCLUIR ESCALA DIRETO DO SUPABASE
     async function excluirEscala(id) {
       if (confirm("Tem certeza que deseja excluir esta escala programada?")) {
         const { error } = await supabaseClient.from('escalas').delete().eq('id', id);
@@ -1044,8 +1069,9 @@
 
     async function sincronizar() {
       if (usuarioAtual && usuarioAtual.motoristaId) {
-        const agoraIso = new Date().toISOString();
-        await supabaseClient.from('motoristas').update({ ultimo_acesso: agoraIso }).eq('id', usuarioAtual.motoristaId);
+        try {
+          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId);
+        } catch(err) {}
       }
 
       const { data: resEscalas } = await supabaseClient.from('escalas').select('*');
@@ -1098,7 +1124,7 @@
       const agora = new Date();
       const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
 
-      c.innerHTML = motoristasCadastroredas = motoristasCadastrados.map(m => {
+      c.innerHTML = motoristasCadastrados.map(m => {
         let statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium">⚪ Offline</span>`;
         
         if (m.ultimo_acesso) {
@@ -1106,7 +1132,7 @@
           const diferencaMinutos = Math.floor((agora - dataAcesso) / (1000 * 60));
           const horaFormatada = dataAcesso.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-          if (diferencaMinutos <= 2) {
+          if (diferencaMinutos <= 5) {
             statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-bold">🟢 Online</span>`;
           } else {
             statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium">⚪ Visto às ${horaFormatada}</span>`;
