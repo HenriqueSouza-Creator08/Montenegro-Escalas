@@ -486,6 +486,16 @@
       </div>
     </div>
 
+    <!-- RODAPÉ DA PÁGINA (Com versão, instagram e grupo do whatsapp) -->
+    <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 pb-8">
+      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v1.0</strong></div>
+      <div class="flex items-center gap-4">
+        <a href="https://www.instagram.com/grupo.souza_/" target="_blank" class="hover:text-blue-500 font-bold transition-colors">📸 Instagram da Empresa</a>
+        <span>•</span>
+        <a href="https://chat.whatsapp.com/FrHcSQKZ8ST77B0c5vTXJP" target="_blank" class="hover:text-emerald-500 font-bold transition-colors">💬 Grupo do WhatsApp</a>
+      </div>
+    </footer>
+
   </main>
 
   <!-- 6. BARRA FLUTUANTE -->
@@ -585,7 +595,6 @@
       }
 
       fecharSidebar();
-      atualizarPresencaOnline();
     }
 
     const sidebarMenu = document.getElementById("sidebarMenu");
@@ -715,13 +724,6 @@
 
       localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
       
-      // 🟢 Se for motorista, atualiza o acesso de forma segura procurando por e-mail caso o ID varie
-      if (usuarioAtual.email) {
-        try {
-          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email);
-        } catch(err) {}
-      }
-      
       document.getElementById("telaLogin").style.display = "none";
       document.getElementById("telaCarregamento").style.display = "flex";
 
@@ -733,36 +735,10 @@
 
     document.getElementById("botaoLogout").addEventListener("click", () => {
       fecharSidebar();
-      if (usuarioAtual && usuarioAtual.email) {
-        supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email).then(() => {
-          localStorage.removeItem("montenegro_usuario");
-          usuarioAtual = null;
-          aplicarSessao();
-        }).catch(() => {
-          localStorage.removeItem("montenegro_usuario");
-          usuarioAtual = null;
-          aplicarSessao();
-        });
-      } else {
-        localStorage.removeItem("montenegro_usuario");
-        usuarioAtual = null;
-        aplicarSessao();
-      }
+      localStorage.removeItem("montenegro_usuario");
+      usuarioAtual = null;
+      aplicarSessao();
     });
-
-    async function atualizarPresencaOnline() {
-      if (usuarioAtual && usuarioAtual.email) {
-        try {
-          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email);
-        } catch(err) {}
-      }
-    }
-
-    setInterval(() => {
-      if (usuarioAtual && usuarioAtual.email) {
-        atualizarPresencaOnline();
-      }
-    }, 10000);
 
     function aplicarSessao() {
       if (!usuarioAtual) {
@@ -817,17 +793,7 @@
       const senha = document.getElementById("novoMotSenha").value;
 
       let dadosParaInserir = { nome, email, senha };
-      try {
-        dadosParaInserir.ultimo_acesso = new Date().toISOString();
-      } catch(err) {}
-
       let { error } = await supabaseClient.from('motoristas').insert([dadosParaInserir]);
-
-      if (error && error.message.includes('ultimo_acesso')) {
-        delete dadosParaInserir.ultimo_acesso;
-        const res2 = await supabaseClient.from('motoristas').insert([dadosParaInserir]);
-        error = res2.error;
-      }
 
       if (error) {
         alert("Erro ao cadastrar motorista: " + error.message);
@@ -1067,12 +1033,6 @@
     }
 
     async function sincronizar() {
-      if (usuarioAtual && usuarioAtual.email) {
-        try {
-          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email);
-        } catch(err) {}
-      }
-
       const { data: resEscalas } = await supabaseClient.from('escalas').select('*');
       if (resEscalas) registros = resEscalas;
 
@@ -1120,34 +1080,16 @@
       const c = document.getElementById("listaColaboradores");
       if (motoristasCadastrados.length === 0) { c.innerHTML = `<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400 col-span-4">Nenhum motorista cadastrado.</div>`; return; }
       
-      const agora = new Date();
       const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
 
       c.innerHTML = motoristasCadastrados.map(m => {
-        let statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium">⚪ Offline</span>`;
-        
-        if (m.ultimo_acesso) {
-          const dataAcesso = new Date(m.ultimo_acesso);
-          const diferencaMinutos = Math.floor((agora - dataAcesso) / (1000 * 60));
-          const horaFormatada = dataAcesso.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-          // 🟢 Ampliado a tolerância para 10 minutos para garantir que fique verde com facilidade
-          if (diferencaMinutos <= 10) {
-            statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-bold">🟢 Online</span>`;
-          } else {
-            statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium">⚪ Visto às ${horaFormatada}</span>`;
-          }
-        }
-
         return `
-          `+`
           <div class="p-4 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm">
             <div class="flex items-center gap-3 overflow-hidden">
               <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 bg-cover bg-center border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-sm shrink-0" style="${m.foto ? `background-image: url('${m.foto}')` : ''}">${!m.foto ? '👤' : ''}</div>
               <div class="overflow-hidden space-y-0.5">
                 <div class="font-bold text-xs text-slate-800 dark:text-white truncate">${m.nome}</div>
                 <div class="text-[10px] text-slate-400 truncate">${m.email}</div>
-                <div>${statusHtml}</div>
               </div>
             </div>
             ${isAdmin ? `<button onclick="excluirMotorista('${m.id}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-[10px] transition-colors shrink-0">🗑️ Excluir</button>` : ''}
