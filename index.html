@@ -715,9 +715,10 @@
 
       localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
       
-      if (usuarioAtual.motoristaId) {
+      // 🟢 Se for motorista, atualiza o acesso de forma segura procurando por e-mail caso o ID varie
+      if (usuarioAtual.email) {
         try {
-          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId);
+          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email);
         } catch(err) {}
       }
       
@@ -732,8 +733,8 @@
 
     document.getElementById("botaoLogout").addEventListener("click", () => {
       fecharSidebar();
-      if (usuarioAtual && usuarioAtual.motoristaId) {
-        supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId).then(() => {
+      if (usuarioAtual && usuarioAtual.email) {
+        supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email).then(() => {
           localStorage.removeItem("montenegro_usuario");
           usuarioAtual = null;
           aplicarSessao();
@@ -750,15 +751,15 @@
     });
 
     async function atualizarPresencaOnline() {
-      if (usuarioAtual && usuarioAtual.motoristaId) {
+      if (usuarioAtual && usuarioAtual.email) {
         try {
-          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId);
+          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email);
         } catch(err) {}
       }
     }
 
     setInterval(() => {
-      if (usuarioAtual && usuarioAtual.motoristaId) {
+      if (usuarioAtual && usuarioAtual.email) {
         atualizarPresencaOnline();
       }
     }, 10000);
@@ -809,7 +810,6 @@
       });
     }
 
-    // 🟢 CADASTRO ROBUSTO (Compatível mesmo se a coluna ultimo_acesso ainda não existir)
     document.getElementById("formNovoMotorista").addEventListener("submit", async (e) => {
       e.preventDefault();
       const nome = document.getElementById("novoMotNome").value.trim();
@@ -823,7 +823,6 @@
 
       let { error } = await supabaseClient.from('motoristas').insert([dadosParaInserir]);
 
-      // Fallback caso a tabela não tenha a coluna ultimo_acesso criada no Supabase ainda
       if (error && error.message.includes('ultimo_acesso')) {
         delete dadosParaInserir.ultimo_acesso;
         const res2 = await supabaseClient.from('motoristas').insert([dadosParaInserir]);
@@ -1068,9 +1067,9 @@
     }
 
     async function sincronizar() {
-      if (usuarioAtual && usuarioAtual.motoristaId) {
+      if (usuarioAtual && usuarioAtual.email) {
         try {
-          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuarioAtual.motoristaId);
+          await supabaseClient.from('motoristas').update({ ultimo_acesso: new Date().toISOString() }).eq('email', usuarioAtual.email);
         } catch(err) {}
       }
 
@@ -1132,7 +1131,8 @@
           const diferencaMinutos = Math.floor((agora - dataAcesso) / (1000 * 60));
           const horaFormatada = dataAcesso.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-          if (diferencaMinutos <= 5) {
+          // 🟢 Ampliado a tolerância para 10 minutos para garantir que fique verde com facilidade
+          if (diferencaMinutos <= 10) {
             statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-bold">🟢 Online</span>`;
           } else {
             statusHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium">⚪ Visto às ${horaFormatada}</span>`;
@@ -1140,6 +1140,7 @@
         }
 
         return `
+          `+`
           <div class="p-4 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm">
             <div class="flex items-center gap-3 overflow-hidden">
               <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 bg-cover bg-center border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-sm shrink-0" style="${m.foto ? `background-image: url('${m.foto}')` : ''}">${!m.foto ? '👤' : ''}</div>
