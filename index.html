@@ -38,6 +38,23 @@
       background: rgba(15, 23, 42, 0.85);
     }
 
+    /* Animação suave do menu lateral */
+    #sidebarMenu {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Efeito de transparência dinâmica no cabeçalho ao rolar */
+    header.scrolled {
+      background: rgba(255, 255, 255, 0.75) !important;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+    .dark header.scrolled {
+      background: rgba(15, 23, 42, 0.75) !important;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+    }
+
     .dot-flashing {
       display: inline-block;
       width: 6px;
@@ -112,7 +129,7 @@
   </div>
 
   <!-- 3. BARRA SUPERIOR -->
-  <header id="appHeader" class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800 py-3 px-4 md:px-8" style="display: none;">
+  <header id="appHeader" class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 transition-all duration-300 border-b border-slate-200/60 dark:border-slate-800 py-3 px-4 md:px-8" style="display: none;">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <button id="btnMenu" type="button" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-white text-lg shadow-sm active:scale-90 transition-transform">
@@ -151,7 +168,7 @@
 
   <!-- 4. MENU LATERAL -->
   <div id="overlaySidebar" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 opacity-0 pointer-events-none transition-opacity duration-300"></div>
-  <aside id="sidebarMenu" class="fixed top-0 left-0 w-80 h-full bg-white dark:bg-slate-800 z-50 p-6 shadow-2xl sidebar-transition -translate-x-full flex flex-col justify-between">
+  <aside id="sidebarMenu" class="fixed top-0 left-0 w-80 h-full bg-white dark:bg-slate-800 z-50 p-6 shadow-2xl -translate-x-full flex flex-col justify-between">
     <div>
       <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-700">
         <div class="flex items-center gap-3">
@@ -278,12 +295,13 @@
                 <option value="Manhã">Turno: Manhã</option>
                 <option value="Tarde">Turno: Tarde</option>
                 <option value="Noite">Turno: Noite</option>
+                <option value="Integral">Turno: Integral</option>
               </select>
             </div>
             <input type="text" id="adminMotoristaInput" placeholder="Nome do Motorista..." required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
             <div class="grid grid-cols-2 gap-2">
               <input type="text" id="adminLinha" placeholder="Linha (Ex: 361)" required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
-              <input type="text" id="adminPrefixo" placeholder="Carro/Prefixo (Ex: 04520)" required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+              <input type="text" id="adminPrefixo" placeholder="Carro/Prefixo (Ex: 04430 ao 04435)" required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
             </div>
             <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs shadow-md shadow-blue-500/20">
               Publicar Escala no Sistema
@@ -345,12 +363,12 @@
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Prefixo</label>
-              <input type="text" id="frotaPrefixo" placeholder="Ex: 04520" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Prefixos</label>
+              <input type="text" id="frotaPrefixo" placeholder="Ex: 04430 ao 04435" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Placa</label>
-              <input type="text" id="frotaPlaca" placeholder="Ex: NSQ-0B25" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Chassi</label>
+              <input type="text" id="frotaChassi" placeholder="Ex: Volkswagen ou Mercedes-Benz" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
             </div>
           </div>
           <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs shadow-md">
@@ -436,7 +454,11 @@
             </select>
             <div class="grid grid-cols-2 gap-2">
               <input type="text" id="printLinha" placeholder="Linha (Ex: 361)" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
-              <input type="text" id="printPrefixo" placeholder="Carro (Ex: 04520)" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+              <input type="text" id="printPrefixo" placeholder="Carro (Ex: 04430)" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Quilometragem Percorrida (KM)</label>
+              <input type="text" id="printQuilometragem" placeholder="Ex: 145.2 KM" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
             </div>
             <div class="flex items-center gap-3">
               <label for="inputArquivoPrint" class="cursor-pointer px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-white font-bold rounded-2xl text-xs border border-slate-200 dark:border-slate-600">
@@ -452,7 +474,12 @@
           </form>
         </div>
       </div>
-      <div id="listaPrintsViagem" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+      <!-- SEÇÃO DE PRINTS AGRUPADOS -->
+      <div class="space-y-4 pt-4">
+        <h3 class="font-bold text-xl text-slate-800 dark:text-white">Relatório Consolidado de Viagens & Prints</h3>
+        <div id="listaPrintsViagem" class="space-y-4"></div>
+      </div>
     </div>
 
     <!-- ABA 8: MONTENEGRO WRAPPED -->
@@ -486,9 +513,9 @@
       </div>
     </div>
 
-    <!-- RODAPÉ DA PÁGINA (Com versão, instagram e grupo do whatsapp) -->
+    <!-- RODAPÉ DA PÁGINA (Versão v1.5) -->
     <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 pb-8">
-      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v1.0</strong></div>
+      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v1.5</strong></div>
       <div class="flex items-center gap-4">
         <a href="https://www.instagram.com/grupo.souza_/" target="_blank" class="hover:text-blue-500 font-bold transition-colors">📸 Instagram da Empresa</a>
         <span>•</span>
@@ -531,9 +558,9 @@
     let motoristasCadastrados = [];
     let frotaVeiculos = JSON.parse(localStorage.getItem("montenegro_frota")) || [];
     let comunicados = JSON.parse(localStorage.getItem("montenegro_comunicados")) || [];
-    let ocorrencias = [];
-    let justificativas = [];
-    let printsViagem = [];
+    let ocorrencias = JSON.parse(localStorage.getItem("montenegro_ocorrencias")) || [];
+    let justificativas = JSON.parse(localStorage.getItem("montenegro_justificativas")) || [];
+    let printsViagem = JSON.parse(localStorage.getItem("montenegro_prints")) || [];
     let fotoTempPerfil = null;
     let fotoTempPrint = null;
 
@@ -567,6 +594,16 @@
     function togglePainelNotificacoes() {
       document.getElementById("painelNotificacoes").classList.toggle("hidden");
     }
+
+    // Efeito de rolagem no cabeçalho
+    window.addEventListener("scroll", () => {
+      const header = document.getElementById("appHeader");
+      if (window.scrollY > 20) {
+        header.classList.add("scrolled");
+      } else {
+        header.classList.remove("scrolled");
+      }
+    });
 
     document.getElementById("dataAtualExtenso").textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -820,9 +857,9 @@
       e.preventDefault();
       const modelo = document.getElementById("frotaModelo").value.trim();
       const prefixo = document.getElementById("frotaPrefixo").value.trim();
-      const placa = document.getElementById("frotaPlaca").value.trim();
+      const chassi = document.getElementById("frotaChassi").value.trim();
 
-      frotaVeiculos.unshift({ id: Date.now(), modelo, prefixo, placa });
+      frotaVeiculos.unshift({ id: Date.now(), modelo, prefixo, chassi });
       localStorage.setItem("montenegro_frota", JSON.stringify(frotaVeiculos));
 
       renderizarFrota();
@@ -945,76 +982,189 @@
 
     document.getElementById("formOcorrencia").addEventListener("submit", (e) => {
       e.preventDefault();
-      const txt = document.getElementById("textoOcorrencia").value;
-      ocorrencias.unshift({ id: Date.now(), autor: usuarioAtual.nomePersonalizado || usuarioAtual.email, texto: txt, hora: new Date().toLocaleTimeString('pt-BR') });
+      const txt = document.getElementById("textoOcorrencia").value.trim();
+      ocorrencias.unshift({ 
+        id: Date.now(), 
+        autor: usuarioAtual.nomePersonalizado || usuarioAtual.email, 
+        texto: txt, 
+        hora: new Date().toLocaleTimeString('pt-BR') 
+      });
+      localStorage.setItem("montenegro_ocorrencias", JSON.stringify(ocorrencias));
       renderizarOcorrencias();
       document.getElementById("formOcorrencia").reset();
       alert("Ocorrência registrada!");
     });
 
+    function excluirOcorrencia(id) {
+      if (confirm("Tem certeza que deseja excluir esta ocorrência?")) {
+        ocorrencias = ocorrencias.filter(o => o.id !== id);
+        localStorage.setItem("montenegro_ocorrencias", JSON.stringify(ocorrencias));
+        renderizarOcorrencias();
+      }
+    }
+
     document.getElementById("formJustificativa").addEventListener("submit", (e) => {
       e.preventDefault();
       const dataFalta = document.getElementById("dataFalta").value;
-      const motivo = document.getElementById("motivoFalta").value;
-      justificativas.unshift({ id: Date.now(), motorista: usuarioAtual.nomePersonalizado || usuarioAtual.email, data: dataFalta, motivo });
+      const motivo = document.getElementById("motivoFalta").value.trim();
+      justificativas.unshift({ 
+        id: Date.now(), 
+        motorista: usuarioAtual.nomePersonalizado || usuarioAtual.email, 
+        data: dataFalta, 
+        motivo 
+      });
+      localStorage.setItem("montenegro_justificativas", JSON.stringify(justificativas));
       renderizarJustificativas();
       document.getElementById("formJustificativa").reset();
       alert("Justificativa enviada!");
     });
 
+    function excluirJustificativa(id) {
+      if (confirm("Tem certeza que deseja excluir esta justificativa?")) {
+        justificativas = justificativas.filter(j => j.id !== id);
+        localStorage.setItem("montenegro_justificativas", JSON.stringify(justificativas));
+        renderizarJustificativas();
+      }
+    }
+
     document.getElementById("formPrintViagem").addEventListener("submit", (e) => {
       e.preventDefault();
       if (!fotoTempPrint) { alert("Selecione um print da galeria!"); return; }
-      printsViagem.unshift({
+      
+      const novoPrint = {
         id: Date.now(),
         motorista: usuarioAtual.nomePersonalizado || usuarioAtual.email,
         estagio: document.getElementById("estagioViagem").value,
         linha: document.getElementById("printLinha").value,
         prefixo: document.getElementById("printPrefixo").value,
+        quilometragem: document.getElementById("printQuilometragem").value,
         urlImagem: fotoTempPrint,
-        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      });
+        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        data: new Date().toLocaleDateString('pt-BR')
+      };
+
+      printsViagem.unshift(novoPrint);
+      localStorage.setItem("montenegro_prints", JSON.stringify(printsViagem));
+
       renderizarPrints();
       document.getElementById("formPrintViagem").reset();
       document.getElementById("containerPreviewPrint").classList.add("hidden");
       document.getElementById("nomeArquivoPrint").textContent = "Nenhum arquivo";
       fotoTempPrint = null;
-      alert("Comprovante postado!");
+      alert("Comprovante postado com sucesso!");
     });
+
+    function excluirPrint(id) {
+      if (confirm("Tem certeza que deseja excluir este print?")) {
+        printsViagem = printsViagem.filter(p => p.id !== id);
+        localStorage.setItem("montenegro_prints", JSON.stringify(printsViagem));
+        renderizarPrints();
+      }
+    }
 
     function renderizarOcorrencias() {
       const c = document.getElementById("listaOcorrencias");
-      if (ocorrencias.length === 0) { c.innerHTML = `<div class="p-4 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400">Nenhuma ocorrência registrada.</div>`; return; }
-      c.innerHTML = ocorrencias.map(o => `
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 space-y-1">
-          <div class="flex justify-between text-[10px] text-slate-400 font-bold"><span>${o.autor}</span><span>${o.hora}</span></div>
-          <p class="text-xs text-slate-700 dark:text-slate-200">${o.texto}</p>
-        </div>
-      `).join('');
+      const nomeUsuarioAtual = usuarioAtual ? (usuarioAtual.nomePersonalizado || usuarioAtual.email) : "";
+      const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
+
+      if (ocorrencias.length === 0) { 
+        c.innerHTML = `<div class="p-4 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400">Nenhuma ocorrência registrada.</div>`; 
+        return; 
+      }
+
+      c.innerHTML = ocorrencias.map(o => {
+        const podeExcluir = isAdmin || o.autor === nomeUsuarioAtual;
+        return `
+          <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 space-y-1 relative">
+            <div class="flex justify-between items-center text-[10px] text-slate-400 font-bold">
+              <span>${o.autor} • ${o.hora}</span>
+              ${podeExcluir ? `<button onclick="excluirOcorrencia(${o.id})" class="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-[10px] transition-colors">🗑️ Excluir</button>` : ''}
+            </div>
+            <p class="text-xs text-slate-700 dark:text-slate-200 mt-1">${o.texto}</p>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderizarJustificativas() {
       const c = document.getElementById("listaJustificativas");
-      if (justificativas.length === 0) { c.innerHTML = `<div class="p-4 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400">Nenhuma justificativa registrada.</div>`; return; }
-      c.innerHTML = justificativas.map(j => `
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 space-y-1">
-          <div class="flex justify-between text-[10px] text-slate-400 font-bold"><span>${j.motorista}</span><span>Data: ${j.data}</span></div>
-          <p class="text-xs text-slate-700 dark:text-slate-200">${j.motivo}</p>
-        </div>
-      `).join('');
+      const nomeUsuarioAtual = usuarioAtual ? (usuarioAtual.nomePersonalizado || usuarioAtual.email) : "";
+      const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
+
+      if (justificativas.length === 0) { 
+        c.innerHTML = `<div class="p-4 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400">Nenhuma justificativa registrada.</div>`; 
+        return; 
+      }
+
+      c.innerHTML = justificativas.map(j => {
+        const podeExcluir = isAdmin || j.motorista === nomeUsuarioAtual;
+        return `
+          <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 space-y-1 relative">
+            <div class="flex justify-between items-center text-[10px] text-slate-400 font-bold">
+              <span>${j.motorista} • Data: ${j.data}</span>
+              ${podeExcluir ? `<button onclick="excluirJustificativa(${j.id})" class="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-[10px] transition-colors">🗑️ Excluir</button>` : ''}
+            </div>
+            <p class="text-xs text-slate-700 dark:text-slate-200 mt-1">${j.motivo}</p>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderizarPrints() {
       const c = document.getElementById("listaPrintsViagem");
-      if (printsViagem.length === 0) { c.innerHTML = `<div class="p-4 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400 col-span-3">Nenhum print de viagem enviado hoje.</div>`; return; }
-      c.innerHTML = printsViagem.map(p => `
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-2 shadow-sm">
-          <div class="flex justify-between items-center"><span class="px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">${p.estagio}</span><span class="text-[10px] text-slate-400">${p.hora}</span></div>
-          <div class="text-xs font-bold text-slate-800 dark:text-white">Motorista: ${p.motorista}</div>
-          <div class="text-[11px] text-slate-500">Linha: ${p.linha} | Carro: ${p.prefixo}</div>
-          <div class="w-full h-44 rounded-2xl bg-cover bg-center border dark:border-slate-700" style="background-image: url('${p.urlImagem}')"></div>
-        </div>
-      `).join('');
+      if (printsViagem.length === 0) { 
+        c.innerHTML = `<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400">Nenhum print de viagem enviado até o momento.</div>`; 
+        return; 
+      }
+
+      const grupos = {};
+      printsViagem.forEach(p => {
+        const chave = `${p.motorista}_${p.data}_${p.linha}_${p.prefixo}`;
+        if (!grupos[chave]) {
+          grupos[chave] = {
+            motorista: p.motorista,
+            data: p.data,
+            linha: p.linha,
+            prefixo: p.prefixo,
+            quilometragem: p.quilometragem,
+            itens: []
+          };
+        }
+        grupos[chave].itens.push(p);
+      });
+
+      const nomeUsuarioAtual = usuarioAtual ? (usuarioAtual.nomePersonalizado || usuarioAtual.email) : "";
+      const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
+
+      c.innerHTML = Object.values(grupos).map(g => {
+        const podeExcluir = isAdmin || g.motorista === nomeUsuarioAtual;
+        return `
+          <div class="p-6 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-4 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
+              <div>
+                <h4 class="font-bold text-sm text-slate-800 dark:text-white">🚌 Motorista: ${g.motorista}</h4>
+                <div class="text-xs text-slate-500 mt-0.5">Linha: <strong class="text-slate-700 dark:text-slate-300">${g.linha}</strong> | Carro: <strong class="text-slate-700 dark:text-slate-300">${g.prefixo}</strong> | KM: <strong class="text-blue-600 dark:text-blue-400">${g.quilometragem}</strong></div>
+              </div>
+              <span class="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">📅 ${g.data}</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              ${g.itens.map(item => `
+                <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border dark:border-slate-700 space-y-2 relative">
+                  <div class="flex justify-between items-center">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">${item.estagio}</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] text-slate-400">${item.hora}</span>
+                      ${podeExcluir ? `<button onclick="excluirPrint(${item.id})" class="px-1.5 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-[10px] transition-colors" title="Excluir print">🗑️</button>` : ''}
+                    </div>
+                  </div>
+                  <div class="w-full h-36 rounded-xl bg-cover bg-center border dark:border-slate-700" style="background-image: url('${item.urlImagem}')"></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderizarFrota() {
@@ -1025,7 +1175,7 @@
         <div class="p-5 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-2 shadow-sm flex items-center justify-between">
           <div>
             <h4 class="font-bold text-sm text-slate-800 dark:text-white">🚍 ${v.modelo}</h4>
-            <div class="text-xs text-slate-500 mt-1">Prefixo: <strong class="text-slate-700 dark:text-slate-300">${v.prefixo}</strong> | Placa: <strong class="text-slate-700 dark:text-slate-300">${v.placa}</strong></div>
+            <div class="text-xs text-slate-500 mt-1">Prefixos: <strong class="text-slate-700 dark:text-slate-300">${v.prefixo}</strong> | Chassi: <strong class="text-slate-700 dark:text-slate-300">${v.chassi}</strong></div>
           </div>
           ${isAdmin ? `<button onclick="excluirVeiculo(${v.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-[10px] transition-colors shrink-0">🗑️ Excluir</button>` : ''}
         </div>
