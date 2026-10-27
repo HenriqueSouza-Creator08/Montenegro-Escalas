@@ -189,6 +189,7 @@
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('comunicados')">📢 Comunicados</a>
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('ocorrencias')">🚨 Ocorrências & Justificativas</a>
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('ponto')">⏱️ Bater Ponto & Prints</a>
+        <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('relatorioscompartilhados')">📸 Relatórios & Prints Compartilhados</a>
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('contabilidade')">💰 Contabilidade & Faturamento</a>
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('wrapped')">⭐ Montenegro Wrapped</a>
       </nav>
@@ -528,14 +529,18 @@
           </button>
         </form>
       </div>
-
-      <div class="space-y-4 pt-4">
-        <h3 class="font-bold text-xl text-slate-800 dark:text-white">Relatórios & Prints Compartilhados com a Equipe</h3>
-        <div id="listaRelatoriosCompartilhados" class="space-y-4"></div>
-      </div>
     </div>
 
-    <!-- ABA 8: CONTABILIDADE & FATURAMENTO -->
+    <!-- ABA 8: RELATÓRIOS & PRINTS COMPARTILHADOS (NOVA ABA EXCLUSIVA) -->
+    <div id="abaRelatorioscompartilhados" class="aba-conteudo hidden space-y-6">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-xl text-slate-800 dark:text-white">Relatórios & Prints Compartilhados com a Equipe</h3>
+        <span class="text-xs text-slate-400 font-medium">Atualizado em tempo real</span>
+      </div>
+      <div id="listaRelatoriosCompartilhados" class="space-y-4"></div>
+    </div>
+
+    <!-- ABA 9: CONTABILIDADE & FATURAMENTO -->
     <div id="abaContabilidade" class="aba-conteudo hidden space-y-6">
       <div class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 p-8 rounded-3xl text-white shadow-2xl space-y-6">
         <div class="space-y-1">
@@ -577,7 +582,7 @@
       </div>
     </div>
 
-    <!-- ABA 9: MONTENEGRO WRAPPED -->
+    <!-- ABA 10: MONTENEGRO WRAPPED -->
     <div id="abaWrapped" class="aba-conteudo hidden space-y-6">
       <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-8 rounded-3xl text-white shadow-2xl text-center space-y-6">
         <div class="space-y-1">
@@ -610,7 +615,7 @@
 
     <!-- RODAPÉ DA PÁGINA -->
     <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 pb-8">
-      <div class="font-semibold">Viação Montenegro • Versão do App: <strong id="versaoAppTag">v1.6</strong></div>
+      <div class="font-semibold">Viação Montenegro • Versão do App: <strong id="versaoAppTag">v1.7</strong></div>
       <div class="flex items-center gap-4">
         <a href="https://www.instagram.com/grupo.souza_/" target="_blank" class="hover:text-blue-500 font-bold transition-colors">📸 Instagram da Empresa</a>
         <span>•</span>
@@ -653,7 +658,7 @@
     let motoristasCadastrados = [];
     
     // SISTEMA DE VERSIONAMENTO E BLINDAJE DE DADOS DA FROTA
-    const VERSAO_APP = "v1.6";
+    const VERSAO_APP = "v1.7";
     if (localStorage.getItem("montenegro_versao") !== VERSAO_APP) {
       localStorage.setItem("montenegro_versao", VERSAO_APP);
     }
@@ -779,7 +784,6 @@
       localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
       if (usuarioAtual.foto) atualizarAvatarUI(usuarioAtual.foto);
 
-      // Se for motorista cadastrado no banco, atualiza na tabela
       if (usuarioAtual.motoristaId) {
         try {
           await supabaseClient.from('motoristas').update({ 
@@ -877,7 +881,6 @@
         const nomeAdminExtraido = email.split(".admin")[0];
         const nomeFormatado = nomeAdminExtraido.charAt(0).toUpperCase() + nomeAdminExtraido.slice(1) + " (Administração)";
         
-        // Mantém a foto salva anteriormente se houver no localStorage
         const usuarioAntigo = JSON.parse(localStorage.getItem("montenegro_usuario"));
         const fotoAdmin = (usuarioAntigo && usuarioAntigo.email === email) ? usuarioAntigo.foto : null;
 
@@ -1249,7 +1252,6 @@
         totalKm += r.km || 0;
       });
 
-      // Tarifa: R$ 5,40 inteira
       const faturamentoTotal = totalCatracados * 5.40;
       const faturamentoMensal = faturamentoTotal > 0 ? faturamentoTotal : 0;
       const faturamentoAnual = faturamentoMensal * 12;
