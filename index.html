@@ -38,12 +38,10 @@
       background: rgba(15, 23, 42, 0.85);
     }
 
-    /* Animação suave do menu lateral */
     #sidebarMenu {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Efeito de transparência dinâmica no cabeçalho ao rolar */
     header.scrolled {
       background: rgba(255, 255, 255, 0.75) !important;
       backdrop-filter: blur(16px);
@@ -190,7 +188,8 @@
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('frota')">🚍 Frota</a>
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('comunicados')">📢 Comunicados</a>
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('ocorrencias')">🚨 Ocorrências & Justificativas</a>
-        <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('ponto')">⏱️ Bater Ponto Digital</a>
+        <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('ponto')">⏱️ Bater Ponto & Prints</a>
+        <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('contabilidade')">💰 Contabilidade & Faturamento</a>
         <a class="menu-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="trocarAbaGeral('wrapped')">⭐ Montenegro Wrapped</a>
       </nav>
     </div>
@@ -281,30 +280,40 @@
         </div>
       </div>
 
-      <!-- PAINEL PUBLICAR ESCALAS -->
+      <!-- PAINEL PUBLICAR ESCALAS POR PERÍODO -->
       <div id="secaoAdminPainel" class="grid grid-cols-1 gap-6" style="display: none;">
         <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700 space-y-4 max-w-2xl">
           <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
             <span class="text-xl">📅</span>
-            <h3 class="font-bold text-base text-slate-800 dark:text-white">Publicar Nova Escala</h3>
+            <h3 class="font-bold text-base text-slate-800 dark:text-white">Publicar Escala por Período (Ex: 26/10 a 30/10)</h3>
           </div>
           <form id="formEscalaAdmin" class="space-y-3">
             <div class="grid grid-cols-2 gap-2">
-              <input type="date" id="adminData" required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Início</label>
+                <input type="date" id="adminDataInicio" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Encerramento</label>
+                <input type="date" id="adminDataFim" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
               <select id="adminTurno" required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
                 <option value="Manhã">Turno: Manhã</option>
                 <option value="Tarde">Turno: Tarde</option>
                 <option value="Noite">Turno: Noite</option>
                 <option value="Integral">Turno: Integral</option>
+                <option value="Final de Semana">Turno: Final de Semana</option>
               </select>
+              <input type="text" id="adminMotoristaInput" placeholder="Nome do Motorista..." required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
             </div>
-            <input type="text" id="adminMotoristaInput" placeholder="Nome do Motorista..." required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
             <div class="grid grid-cols-2 gap-2">
               <input type="text" id="adminLinha" placeholder="Linha (Ex: 361)" required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
               <input type="text" id="adminPrefixo" placeholder="Carro/Prefixo (Ex: 04430 ao 04435)" required class="px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
             </div>
             <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs shadow-md shadow-blue-500/20">
-              Publicar Escala no Sistema
+              Publicar Escala por Período
             </button>
           </form>
         </div>
@@ -422,13 +431,13 @@
       </div>
     </div>
 
-    <!-- ABA 7: PONTO & PRINTS -->
+    <!-- ABA 7: BATER PONTO, PRINTS E RELATÓRIOS -->
     <div id="abaPonto" class="aba-conteudo hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 text-center space-y-4 shadow-sm">
           <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Hora Oficial de Brasília</span>
           <div id="relogioDigital" class="text-5xl font-black text-slate-900 dark:text-white font-mono">00:00:00</div>
-          <form id="formPonto" class="space-y-3 pt-2 text-left">
+          <form id="formPonto" class="space-y-3 pt-2 text-left" onsubmit="event.preventDefault(); registrarPontoAgora();">
             <select id="pontoTipo" class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
               <option value="Entrada de Turno">Entrada de Turno</option>
               <option value="Saída para Almoço">Saída para Almoço</option>
@@ -439,12 +448,13 @@
               ⏱️ Registrar Ponto Agora
             </button>
           </form>
+          <div id="statusPontoRecente" class="text-xs text-emerald-500 font-bold mt-2"></div>
         </div>
 
         <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
           <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
             <span class="text-xl">📸</span>
-            <h3 class="font-bold text-base text-slate-800 dark:text-white">Anexar Print/Comprovante de Viagem</h3>
+            <h3 class="font-bold text-base text-slate-800 dark:text-white">Anexar Print (Início / Meio / Fim de Viagem)</h3>
           </div>
           <form id="formPrintViagem" class="space-y-3">
             <select id="estagioViagem" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
@@ -458,7 +468,7 @@
             </div>
             <div>
               <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Quilometragem Percorrida (KM)</label>
-              <input type="text" id="printQuilometragem" placeholder="Ex: 145.2 KM" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+              <input type="text" id="printQuilometragem" placeholder="Ex: 145.2" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
             </div>
             <div class="flex items-center gap-3">
               <label for="inputArquivoPrint" class="cursor-pointer px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-white font-bold rounded-2xl text-xs border border-slate-200 dark:border-slate-600">
@@ -469,20 +479,98 @@
             </div>
             <div id="containerPreviewPrint" class="hidden w-full h-40 rounded-2xl bg-cover bg-center border border-slate-200 dark:border-slate-700 shadow-inner"></div>
             <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs shadow-md">
-              Postar Comprovante
+              Postar Print para Todos
             </button>
           </form>
         </div>
       </div>
 
-      <!-- SEÇÃO DE PRINTS AGRUPADOS -->
+      <!-- FORMULÁRIO DE RELATÓRIO DE VIAGEM & PASSAGEIROS -->
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4">
+        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
+          <span class="text-xl">📊</span>
+          <h3 class="font-bold text-base text-slate-800 dark:text-white">Adicionar Relatório de Viagem & Passageiros</h3>
+        </div>
+        <form id="formRelatorioViagem" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" id="relLinha" placeholder="Linha (Ex: 361)" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+            <input type="text" id="relPrefixo" placeholder="Carro (Ex: 04430)" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Passageiros Totais</label>
+              <input type="number" id="relPassageiros" placeholder="Ex: 85" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Catracados</label>
+              <input type="number" id="relCatracados" placeholder="Ex: 60" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Quilômetros (KM)</label>
+              <input type="number" step="0.1" id="relKm" placeholder="Ex: 120.5" required class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+          </div>
+          <textarea id="relObservacoes" placeholder="Observações e detalhes da viagem..." rows="2" class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"></textarea>
+          <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs shadow-md">
+            Publicar Relatório Contábil
+          </button>
+        </form>
+      </div>
+
       <div class="space-y-4 pt-4">
-        <h3 class="font-bold text-xl text-slate-800 dark:text-white">Relatório Consolidado de Viagens & Prints</h3>
-        <div id="listaPrintsViagem" class="space-y-4"></div>
+        <h3 class="font-bold text-xl text-slate-800 dark:text-white">Relatórios & Prints Compartilhados com a Equipe</h3>
+        <div id="listaRelatoriosCompartilhados" class="space-y-4"></div>
       </div>
     </div>
 
-    <!-- ABA 8: MONTENEGRO WRAPPED -->
+    <!-- ABA 8: CONTABILIDADE & FATURAMENTO -->
+    <div id="abaContabilidade" class="aba-conteudo hidden space-y-6">
+      <div class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 p-8 rounded-3xl text-white shadow-2xl space-y-6">
+        <div class="space-y-1">
+          <span class="text-xs uppercase font-bold tracking-widest text-emerald-400">Contabilidade & Gestão Financeira</span>
+          <h2 class="text-3xl font-black">Faturamento Montenegro 💰📈</h2>
+          <p class="text-xs text-slate-300">Cálculo automático baseado nas passagens catracadas (Tarifa média estimada: R$ 5,00 por passageiro catracado).</p>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/10 space-y-1">
+            <span class="text-2xl">👥</span>
+            <div class="text-2xl font-black" id="finTotalPassageiros">0</div>
+            <div class="text-[11px] text-slate-300">Total de Passageiros</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/10 space-y-1">
+            <span class="text-2xl">🔄</span>
+            <div class="text-2xl font-black" id="finTotalCatracados">0</div>
+            <div class="text-[11px] text-slate-300">Total Catracados</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/10 space-y-1">
+            <span class="text-2xl">🛣️</span>
+            <div class="text-2xl font-black" id="finTotalKm">0 KM</div>
+            <div class="text-[11px] text-slate-300">Quilometragem Rodada</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/10 space-y-1">
+            <span class="text-2xl">💵</span>
+            <div class="text-2xl font-black text-emerald-400" id="finFaturamentoEstimado">R$ 0,00</div>
+            <div class="text-[11px] text-slate-300">Faturamento Acumulado</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 space-y-2">
+            <span class="text-xs uppercase font-bold tracking-wider text-emerald-300">Média de Faturamento Mensal (Projetada)</span>
+            <div class="text-3xl font-black" id="finMediaMensal">R$ 0,00</div>
+            <p class="text-[11px] text-slate-300">Estimativa calculada com base na média dos registros de viagens da frota.</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 space-y-2">
+            <span class="text-xs uppercase font-bold tracking-wider text-teal-300">Projeção de Faturamento Anual (12 Meses)</span>
+            <div class="text-3xl font-black" id="finFaturamentoAnual">R$ 0,00</div>
+            <p class="text-[11px] text-slate-300">Previsão de ganho bruto anual baseada no ritmo operacional atual.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 9: MONTENEGRO WRAPPED -->
     <div id="abaWrapped" class="aba-conteudo hidden space-y-6">
       <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-8 rounded-3xl text-white shadow-2xl text-center space-y-6">
         <div class="space-y-1">
@@ -493,8 +581,8 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/10 space-y-1">
             <span class="text-2xl">🛣️</span>
-            <div class="text-2xl font-black">0 KM</div>
-            <div class="text-[11px] text-slate-300">Distância Estimada Percorrida</div>
+            <div class="text-2xl font-black" id="wrappedKm">0 KM</div>
+            <div class="text-[11px] text-slate-300">Distância Total Percorrida</div>
           </div>
           <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/10 space-y-1">
             <span class="text-2xl">⭐</span>
@@ -513,7 +601,7 @@
       </div>
     </div>
 
-    <!-- RODAPÉ DA PÁGINA (Versão v1.5) -->
+    <!-- RODAPÉ DA PÁGINA -->
     <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 pb-8">
       <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v1.5</strong></div>
       <div class="flex items-center gap-4">
@@ -561,6 +649,7 @@
     let ocorrencias = JSON.parse(localStorage.getItem("montenegro_ocorrencias")) || [];
     let justificativas = JSON.parse(localStorage.getItem("montenegro_justificativas")) || [];
     let printsViagem = JSON.parse(localStorage.getItem("montenegro_prints")) || [];
+    let relatoriosViagem = JSON.parse(localStorage.getItem("montenegro_relatorios")) || [];
     let fotoTempPerfil = null;
     let fotoTempPrint = null;
 
@@ -595,7 +684,6 @@
       document.getElementById("painelNotificacoes").classList.toggle("hidden");
     }
 
-    // Efeito de rolagem no cabeçalho
     window.addEventListener("scroll", () => {
       const header = document.getElementById("appHeader");
       if (window.scrollY > 20) {
@@ -719,6 +807,17 @@
       const relogio = document.getElementById("relogioDigital");
       if (relogio) relogio.textContent = new Date().toLocaleTimeString('pt-BR');
     }, 1000);
+
+    function registrarPontoAgora() {
+      const tipoPonto = document.getElementById("pontoTipo").value;
+      const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const statusDiv = document.getElementById("statusPontoRecente");
+      
+      statusDiv.textContent = `✅ Ponto de "${tipoPonto}" registrado com sucesso às ${horaAtual}!`;
+      setTimeout(() => {
+        statusDiv.textContent = "";
+      }, 5000);
+    }
 
     function selecionarPerfil(tipo) {
       document.getElementById('tipoAcesso').value = tipo;
@@ -877,25 +976,30 @@
 
     document.getElementById("formEscalaAdmin").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const dataEscala = document.getElementById("adminData").value;
+      const dataInicio = document.getElementById("adminDataInicio").value;
+      const dataFim = document.getElementById("adminDataFim").value;
       const turno = document.getElementById("adminTurno").value;
       const motorista = document.getElementById("adminMotoristaInput").value.trim();
       const linha = document.getElementById("adminLinha").value.trim();
       const prefixo = document.getElementById("adminPrefixo").value.trim();
 
+      const [anoI, mesI, diaI] = dataInicio.split("-");
+      const [anoF, mesF, diaF] = dataFim.split("-");
+      const periodoFormatado = `${diaI}/${mesI}/${anoI} até ${diaF}/${mesF}/${anoF}`;
+
       const { error } = await supabaseClient.from('escalas').insert([{
-        data: dataEscala,
+        data: periodoFormatado,
         turno,
         motorista,
         linha,
         prefixo,
-        tipo: 'Escala de Trabalho'
+        tipo: 'Período'
       }]);
 
       if (error) {
         alert("Erro ao publicar escala: " + error.message);
       } else {
-        alert("Escala publicada com sucesso!");
+        alert("Escala por período publicada com sucesso!");
         document.getElementById("formEscalaAdmin").reset();
         sincronizar();
       }
@@ -1046,20 +1150,78 @@
       printsViagem.unshift(novoPrint);
       localStorage.setItem("montenegro_prints", JSON.stringify(printsViagem));
 
-      renderizarPrints();
+      renderizarRelatoriosCompartilhados();
       document.getElementById("formPrintViagem").reset();
       document.getElementById("containerPreviewPrint").classList.add("hidden");
       document.getElementById("nomeArquivoPrint").textContent = "Nenhum arquivo";
       fotoTempPrint = null;
-      alert("Comprovante postado com sucesso!");
+      alert("Print compartilhado com todos com sucesso!");
     });
 
     function excluirPrint(id) {
       if (confirm("Tem certeza que deseja excluir este print?")) {
         printsViagem = printsViagem.filter(p => p.id !== id);
         localStorage.setItem("montenegro_prints", JSON.stringify(printsViagem));
-        renderizarPrints();
+        renderizarRelatoriosCompartilhados();
       }
+    }
+
+    document.getElementById("formRelatorioViagem").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const novoRel = {
+        id: Date.now(),
+        autor: usuarioAtual.nomePersonalizado || usuarioAtual.email,
+        linha: document.getElementById("relLinha").value.trim(),
+        prefixo: document.getElementById("relPrefixo").value.trim(),
+        passageiros: parseInt(document.getElementById("relPassageiros").value) || 0,
+        catracados: parseInt(document.getElementById("relCatracados").value) || 0,
+        km: parseFloat(document.getElementById("relKm").value) || 0,
+        observacoes: document.getElementById("relObservacoes").value.trim(),
+        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        data: new Date().toLocaleDateString('pt-BR')
+      };
+
+      relatoriosViagem.unshift(novoRel);
+      localStorage.setItem("montenegro_relatorios", JSON.stringify(relatoriosViagem));
+
+      renderizarRelatoriosCompartilhados();
+      atualizarContabilidade();
+      document.getElementById("formRelatorioViagem").reset();
+      alert("Relatório contábil publicado para todos!");
+    });
+
+    function excluirRelatorio(id) {
+      if (confirm("Tem certeza que deseja excluir este relatório?")) {
+        relatoriosViagem = relatoriosViagem.filter(r => r.id !== id);
+        localStorage.setItem("montenegro_relatorios", JSON.stringify(relatoriosViagem));
+        renderizarRelatoriosCompartilhados();
+        atualizarContabilidade();
+      }
+    }
+
+    function atualizarContabilidade() {
+      let totalPassageiros = 0;
+      let totalCatracados = 0;
+      let totalKm = 0;
+
+      relatoriosViagem.forEach(r => {
+        totalPassageiros += r.passageiros || 0;
+        totalCatracados += r.catracados || 0;
+        totalKm += r.km || 0;
+      });
+
+      const faturamentoTotal = totalCatracados * 5.00;
+      const faturamentoMensal = faturamentoTotal > 0 ? faturamentoTotal : 0;
+      const faturamentoAnual = faturamentoMensal * 12;
+
+      document.getElementById("finTotalPassageiros").textContent = totalPassageiros;
+      document.getElementById("finTotalCatracados").textContent = totalCatracados;
+      document.getElementById("finTotalKm").textContent = totalKm.toFixed(1) + " KM";
+      document.getElementById("finFaturamentoEstimado").textContent = faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById("finMediaMensal").textContent = faturamentoMensal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById("finFaturamentoAnual").textContent = faturamentoAnual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      document.getElementById("wrappedKm").textContent = totalKm.toFixed(1) + " KM";
     }
 
     function renderizarOcorrencias() {
@@ -1110,61 +1272,91 @@
       }).join('');
     }
 
-    function renderizarPrints() {
-      const c = document.getElementById("listaPrintsViagem");
-      if (printsViagem.length === 0) { 
-        c.innerHTML = `<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400">Nenhum print de viagem enviado até o momento.</div>`; 
-        return; 
-      }
-
-      const grupos = {};
-      printsViagem.forEach(p => {
-        const chave = `${p.motorista}_${p.data}_${p.linha}_${p.prefixo}`;
-        if (!grupos[chave]) {
-          grupos[chave] = {
-            motorista: p.motorista,
-            data: p.data,
-            linha: p.linha,
-            prefixo: p.prefixo,
-            quilometragem: p.quilometragem,
-            itens: []
-          };
-        }
-        grupos[chave].itens.push(p);
-      });
-
+    function renderizarRelatoriosCompartilhados() {
+      const c = document.getElementById("listaRelatoriosCompartilhados");
       const nomeUsuarioAtual = usuarioAtual ? (usuarioAtual.nomePersonalizado || usuarioAtual.email) : "";
       const isAdmin = usuarioAtual && usuarioAtual.cargo === 'admin';
 
-      c.innerHTML = Object.values(grupos).map(g => {
-        const podeExcluir = isAdmin || g.motorista === nomeUsuarioAtual;
-        return `
-          <div class="p-6 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-4 shadow-sm">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
-              <div>
-                <h4 class="font-bold text-sm text-slate-800 dark:text-white">🚌 Motorista: ${g.motorista}</h4>
-                <div class="text-xs text-slate-500 mt-0.5">Linha: <strong class="text-slate-700 dark:text-slate-300">${g.linha}</strong> | Carro: <strong class="text-slate-700 dark:text-slate-300">${g.prefixo}</strong> | KM: <strong class="text-blue-600 dark:text-blue-400">${g.quilometragem}</strong></div>
-              </div>
-              <span class="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">📅 ${g.data}</span>
-            </div>
+      let htmlGeral = "";
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              ${g.itens.map(item => `
-                <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border dark:border-slate-700 space-y-2 relative">
-                  <div class="flex justify-between items-center">
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">${item.estagio}</span>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-[10px] text-slate-400">${item.hora}</span>
-                      ${podeExcluir ? `<button onclick="excluirPrint(${item.id})" class="px-1.5 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-[10px] transition-colors" title="Excluir print">🗑️</button>` : ''}
-                    </div>
-                  </div>
-                  <div class="w-full h-36 rounded-xl bg-cover bg-center border dark:border-slate-700" style="background-image: url('${item.urlImagem}')"></div>
+      if (relatoriosViagem.length > 0) {
+        htmlGeral += relatoriosViagem.map(r => {
+          const podeExcluir = isAdmin || r.autor === nomeUsuarioAtual;
+          const faturamentoViagem = (r.catracados || 0) * 5.00;
+          return `
+            <div class="p-6 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-3 shadow-sm">
+              <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                <div>
+                  <h4 class="font-bold text-xs text-blue-600 dark:text-blue-400">📊 Relatório Contábil • ${r.autor}</h4>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Linha: <strong>${r.linha}</strong> | Carro: <strong>${r.prefixo}</strong> | 📅 ${r.data} às ${r.hora}</div>
                 </div>
-              `).join('')}
+                ${podeExcluir ? `<button onclick="excluirRelatorio(${r.id})" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-[10px] transition-colors">🗑️ Excluir</button>` : ''}
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl text-xs">
+                <div>👥 Passageiros: <strong class="text-slate-800 dark:text-white">${r.passageiros}</strong></div>
+                <div>🔄 Catracados: <strong class="text-slate-800 dark:text-white">${r.catracados}</strong></div>
+                <div>🛣️ KM: <strong class="text-slate-800 dark:text-white">${r.km} KM</strong></div>
+                <div>💵 Faturamento: <strong class="text-emerald-500">${faturamentoViagem.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></div>
+              </div>
+              ${r.observacoes ? `<p class="text-xs text-slate-700 dark:text-slate-200">${r.observacoes}</p>` : ''}
             </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
+
+      if (printsViagem.length > 0) {
+        const grupos = {};
+        printsViagem.forEach(p => {
+          const chave = `${p.motorista}_${p.data}_${p.linha}_${p.prefixo}`;
+          if (!grupos[chave]) {
+            grupos[chave] = {
+              motorista: p.motorista,
+              data: p.data,
+              linha: p.linha,
+              prefixo: p.prefixo,
+              quilometragem: p.quilometragem,
+              itens: []
+            };
+          }
+          grupos[chave].itens.push(p);
+        });
+
+        htmlGeral += Object.values(grupos).map(g => {
+          const podeExcluirGrupo = isAdmin || g.motorista === nomeUsuarioAtual;
+          return `
+            <div class="p-6 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-4 shadow-sm">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div>
+                  <h4 class="font-bold text-sm text-slate-800 dark:text-white">🚌 Motorista: ${g.motorista}</h4>
+                  <div class="text-xs text-slate-500 mt-0.5">Linha: <strong class="text-slate-700 dark:text-slate-300">${g.linha}</strong> | Carro: <strong class="text-slate-700 dark:text-slate-300">${g.prefixo}</strong> | KM: <strong class="text-blue-600 dark:text-blue-400">${g.quilometragem}</strong></div>
+                </div>
+                <span class="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">📅 ${g.data}</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${g.itens.map(item => `
+                  <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border dark:border-slate-700 space-y-2 relative">
+                    <div class="flex justify-between items-center">
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">${item.estagio}</span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-slate-400">${item.hora}</span>
+                        ${podeExcluirGrupo ? `<button onclick="excluirPrint(${item.id})" class="px-1.5 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-[10px] transition-colors" title="Excluir print">🗑️</button>` : ''}
+                      </div>
+                    </div>
+                    <div class="w-full h-36 rounded-xl bg-cover bg-center border dark:border-slate-700" style="background-image: url('${item.urlImagem}')"></div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (!htmlGeral) {
+        c.innerHTML = `<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400">Nenhum relatório ou print compartilhado até o momento.</div>`;
+      } else {
+        c.innerHTML = htmlGeral;
+      }
     }
 
     function renderizarFrota() {
@@ -1203,7 +1395,8 @@
       renderizarComunicados();
       renderizarOcorrencias();
       renderizarJustificativas();
-      renderizarPrints();
+      renderizarRelatoriosCompartilhados();
+      atualizarContabilidade();
     }
 
     function renderizarEscalas() {
@@ -1216,7 +1409,7 @@
         <div class="p-5 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 space-y-2 shadow-sm flex items-center justify-between">
           <div class="space-y-1">
             <div class="flex justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
-              <span>📅 ${e.data} (${e.turno})</span>
+              <span>📅 Período: ${e.data} (${e.turno})</span>
             </div>
             <div class="text-sm font-black text-slate-800 dark:text-white">Motorista: ${e.motorista}</div>
             <div class="text-xs text-slate-500">Linha: ${e.linha} | Carro: ${e.prefixo}</div>
