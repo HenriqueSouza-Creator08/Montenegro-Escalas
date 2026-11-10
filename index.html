@@ -24,7 +24,7 @@
       .pitem-on { @apply bg-slate-900 text-white; }
       .pbadge { @apply text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/80 dark:bg-white/10 text-slate-500 dark:text-slate-300 mr-1; }
       .pitem-on .pbadge { @apply bg-white/15 text-white; }
-      .mtab { @apply flex flex-col items-center justify-center gap-0.5 w-[4.25rem] h-12 rounded-full text-slate-500 dark:text-slate-400 text-[10px] font-medium transition-all active:scale-95; }
+      .mtab { @apply flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 h-11 rounded-full text-slate-500 dark:text-slate-400 text-[9px] leading-none font-medium transition-all active:scale-95; }
       .mtab-on { @apply bg-white/80 dark:bg-white/15 text-slate-900 dark:text-white font-bold shadow-sm; }
       .vazio { @apply p-6 bg-white dark:bg-slate-800 rounded-2xl text-center text-xs text-slate-400; }
     }
@@ -155,7 +155,7 @@
   </div>
 
   <!-- CONTEÚDO -->
-  <main id="appConteudo" class="max-w-7xl mx-auto pl-4 pr-4 md:pl-[5rem] md:pr-8 pt-6 pb-28 md:pb-4 space-y-6" style="display:none;">
+  <main id="appConteudo" class="max-w-7xl mx-auto pl-4 pr-4 md:pl-[5rem] md:pr-8 pt-6 pb-24 md:pb-4 space-y-6" style="display:none;">
     <div id="avisoErro" class="hidden p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold"></div>
 
     <div>
@@ -418,7 +418,7 @@
     </div>
 
     <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 pb-8">
-      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v2.0</strong></div>
+      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v2.1</strong></div>
       <div class="flex items-center gap-4">
         <a href="https://www.instagram.com/grupo.souza_/" target="_blank" rel="noopener" class="hover:text-blue-500 font-bold">📸 Instagram da Empresa</a><span>•</span>
         <a href="https://chat.whatsapp.com/FrHcSQKZ8ST77B0c5vTXJP" target="_blank" rel="noopener" class="hover:text-emerald-500 font-bold">💬 Grupo do WhatsApp</a>
@@ -427,18 +427,18 @@
   </main>
 
   <!-- BARRA DO CELULAR (só aparece em telas pequenas) -->
-  <div id="navMobile" class="fixed bottom-4 left-3 right-3 z-40 items-center gap-2.5" style="display:none; margin-bottom: env(safe-area-inset-bottom, 0px);">
-    <nav class="glass-dock flex-1 h-16 rounded-full flex items-center justify-around px-2">
-      <button data-mtab="inicio" onclick="trocarAbaGeral('inicio')" class="mtab"><span class="text-lg">🏠</span><span>Início</span></button>
-      <button data-mtab="escalas" onclick="trocarAbaGeral('escalas')" class="mtab"><span class="text-lg">📋</span><span>Escalas</span></button>
-      <button data-mtab="ponto" onclick="trocarAbaGeral('ponto')" class="mtab"><span class="text-lg">⏱️</span><span>Ponto</span></button>
-      <button data-mtab="mais" onclick="abrirSidebar()" class="mtab"><span class="text-lg">☰</span><span>Mais</span></button>
+  <div id="navMobile" class="fixed bottom-3 left-3 right-3 max-w-lg mx-auto z-40 items-center gap-2" style="display:none; margin-bottom: env(safe-area-inset-bottom, 0px);">
+    <nav class="glass-dock flex-1 min-w-0 h-14 rounded-full flex items-center gap-0.5 px-1.5">
+      <button data-mtab="inicio" onclick="trocarAbaGeral('inicio')" class="mtab"><span class="text-base leading-none">🏠</span><span>Início</span></button>
+      <button data-mtab="escalas" onclick="trocarAbaGeral('escalas')" class="mtab"><span class="text-base leading-none">📋</span><span>Escalas</span></button>
+      <button data-mtab="ponto" onclick="trocarAbaGeral('ponto')" class="mtab"><span class="text-base leading-none">⏱️</span><span>Ponto</span></button>
+      <button data-mtab="mais" onclick="abrirSidebar()" class="mtab"><span class="text-base leading-none">☰</span><span>Mais</span></button>
     </nav>
-    <div class="glass-dock h-16 rounded-full flex items-center gap-2 p-2 shrink-0">
-      <button onclick="togglePainelNotificacoes()" class="w-12 h-12 rounded-full bg-slate-900/10 dark:bg-white/10 flex items-center justify-center text-lg relative active:scale-90 transition-transform">
-        🔔<span id="badgeMobile" class="absolute top-0.5 right-0.5 bg-red-500 text-white text-[9px] font-bold min-w-4 h-4 px-1 rounded-full flex items-center justify-center">0</span>
+    <div class="glass-dock h-14 rounded-full flex items-center gap-1.5 p-2 shrink-0">
+      <button onclick="togglePainelNotificacoes()" class="w-10 h-10 rounded-full bg-slate-900/10 dark:bg-white/10 flex items-center justify-center text-base relative active:scale-90 transition-transform">
+        🔔<span id="badgeMobile" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">0</span>
       </button>
-      <button id="mobAvatar" onclick="abrirModalPerfil()" class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 bg-cover bg-center flex items-center justify-center text-xs font-bold active:scale-90 transition-transform">👤</button>
+      <button id="mobAvatar" onclick="abrirModalPerfil()" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 bg-cover bg-center flex items-center justify-center text-[11px] font-bold active:scale-90 transition-transform">👤</button>
     </div>
   </div>
 
