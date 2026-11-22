@@ -54,6 +54,10 @@
     .toast-anim { animation: toastIn .3s ease both; }
     .floaty { animation: floaty 3.2s ease-in-out infinite; }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    html, body { overscroll-behavior-y: contain; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+    .dark .skel { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
     .dot-flashing { display:inline-block; width:6px; height:6px; border-radius:50%; background:#fff; animation: dotFlashing 1s infinite alternate; }
     .dot-2 { animation-delay:.2s; } .dot-3 { animation-delay:.4s; }
     @keyframes dotFlashing { 0% { opacity:.3; transform:scale(.8); } 100% { opacity:1; transform:scale(1.2); } }
@@ -86,7 +90,13 @@
         <div><label class="lbl ml-1">E-mail de Acesso</label>
           <input type="email" id="emailLogin" placeholder="seu.email@montenegro.com" required autocomplete="email" class="inp py-3.5 font-normal"></div>
         <div><label class="lbl ml-1">Senha</label>
-          <input type="password" id="senhaLogin" placeholder="••••••••" required autocomplete="current-password" class="inp py-3.5 font-normal"></div>
+          <div class="relative">
+            <input type="password" id="senhaLogin" placeholder="••••••••" required autocomplete="current-password" class="inp py-3.5 pr-12 font-normal">
+            <button type="button" id="btnVerSenha" onclick="alternarSenha()" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full text-slate-400 hover:text-slate-600 flex items-center justify-center text-lg"><i data-ic="eye"></i></button>
+          </div></div>
+        <label class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+          <input type="checkbox" id="lembrarMe" checked class="w-4 h-4 rounded accent-lime-600"> Lembrar de mim neste aparelho
+        </label>
         <button type="submit" class="btn w-full py-4 bg-blue-600 hover:bg-blue-700 text-sm">Entrar no Sistema</button>
       </form>
     </div>
@@ -148,6 +158,7 @@
         <div id="avatarHeader" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center bg-cover bg-center shrink-0"><i data-ic="user"></i></div>
         <div class="overflow-hidden"><strong id="infoUsuario" class="text-xs font-bold block truncate">Usuário</strong><span id="cargoUsuarioTag" class="text-[10px] text-slate-500 dark:text-slate-400 block truncate">Montenegro App</span></div>
       </div>
+      <button type="button" onclick="fecharSidebar(); abrirTour();" class="w-full py-2.5 bg-white/70 dark:bg-white/10 font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5"><i data-ic="help"></i> Como usar o app</button>
       <button id="botaoLogout" type="button" class="w-full py-2.5 bg-red-50/80 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs">Sair da Conta</button>
     </div>
   </aside>
@@ -227,7 +238,22 @@
 
     <!-- ESCALAS -->
     <div id="abaEscalas" class="aba-conteudo hidden space-y-4">
-      <h3 class="font-bold text-xl">Escalas Programadas</h3>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-bold text-xl">Escalas da Semana</h3>
+        <div class="flex items-center gap-2">
+          <button onclick="mudarSemana(-1)" aria-label="Semana anterior" class="w-9 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center active:scale-90 transition-transform"><i data-ic="chevl"></i></button>
+          <div id="rotuloSemana" class="text-xs font-bold min-w-[7.5rem] text-center">—</div>
+          <button onclick="mudarSemana(1)" aria-label="Próxima semana" class="w-9 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center active:scale-90 transition-transform"><i data-ic="chevr"></i></button>
+          <button onclick="mudarSemana(0)" class="px-3 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold">Hoje</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="btnCopiarSemana" onclick="copiarSemanaPassada(this)" class="btn px-4 py-2.5 bg-blue-600 hover:bg-blue-700 items-center gap-1.5" style="display:none;"><i data-ic="copy"></i> Copiar semana passada</button>
+        <label class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none"><input type="checkbox" id="gradeTodos" onchange="renderizarGrade()" class="accent-lime-600"> Mostrar todos os motoristas</label>
+      </div>
+      <div id="avisoConflitos"></div>
+      <div class="card p-2 overflow-x-auto no-scrollbar"><div id="gradeEscalas"></div></div>
+      <h3 class="font-bold text-lg pt-2">Lista de escalas</h3>
       <div id="listaEscalas" class="stagger grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
@@ -432,7 +458,7 @@
     </div>
 
     <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 pb-8">
-      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v2.2</strong></div>
+      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v2.3.1</strong></div>
       <div class="flex items-center gap-4">
         <a href="https://www.instagram.com/grupo.souza_/" target="_blank" rel="noopener" class="hover:text-blue-500 font-bold"><i data-ic="camera"></i> Instagram da Empresa</a><span>•</span>
         <a href="https://chat.whatsapp.com/FrHcSQKZ8ST77B0c5vTXJP" target="_blank" rel="noopener" class="hover:text-emerald-500 font-bold"><i data-ic="chat"></i> Grupo do WhatsApp</a>
@@ -463,11 +489,24 @@
     <button id="railAvatar" onclick="abrirModalPerfil()" class="chip bg-cover bg-center text-[11px] font-bold" title="Meu perfil"><i data-ic="user"></i></button>
   </nav>
 
+  <div id="ptr" class="fixed top-0 left-1/2 z-[60] w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-lg flex items-center justify-center text-lg text-lime-600 pointer-events-none" style="opacity:0; transform:translate(-50%,-56px);"><i data-ic="refresh"></i></div>
+
+  <div id="tour" class="fixed inset-0 z-[80] hidden items-center justify-center p-5 bg-black/55 backdrop-blur-sm">
+    <div id="tourConteudo" class="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 stagger"></div>
+  </div>
+
   <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold shadow-xl items-center gap-2 toast-anim"></div>
 
   <script>
     // ===== ÍCONES =====
     const SVG_ICONS = {"home": "<path d=\"M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/>", "clipboard": "<rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\"/><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 12h6M9 16h4\"/>", "users": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5\"/>", "bus": "<rect x=\"4\" y=\"3\" width=\"16\" height=\"15\" rx=\"3\"/><path d=\"M4 11h16M8 18v2M16 18v2\"/><circle cx=\"8\" cy=\"14.5\" r=\".8\"/><circle cx=\"16\" cy=\"14.5\" r=\".8\"/>", "megaphone": "<path d=\"M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1z\"/><path d=\"M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11\"/>", "alert": "<path d=\"M12 3 2 20h20z\"/><path d=\"M12 10v4M12 17.5v.01\"/>", "receipt": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6\"/>", "wallet": "<path d=\"M3 7a2 2 0 0 1 2-2h13v4\"/><path d=\"M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z\"/><circle cx=\"16.5\" cy=\"14.5\" r=\"1\"/>", "star": "<path d=\"m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "camera": "<path d=\"M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z\"/><circle cx=\"12\" cy=\"13.5\" r=\"3.5\"/>", "bell": "<path d=\"M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 0 0 4 0\"/>", "menu": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "search": "<circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/>", "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/>", "moon": "<path d=\"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z\"/>", "trash": "<path d=\"M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3\"/>", "x": "<path d=\"M6 6l12 12M18 6 6 18\"/>", "check": "<path d=\"m5 12.5 4.5 4.5L19 7.5\"/>", "chev": "<path d=\"m6 9 6 6 6-6\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/>", "refresh": "<path d=\"M20 11a8 8 0 0 0-14-4L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4l2-2M20 20v-5h-5\"/>", "image": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.6\"/><path d=\"m21 16-5-5-9 9\"/>", "chart": "<path d=\"M4 20V4M4 20h16M8 16v-5M12 16V8M16 16v-3\"/>", "calendar": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/>", "road": "<path d=\"M5 21 9 3M19 21 15 3M12 4v3M12 11v3M12 18v3\"/>", "shield": "<path d=\"M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z\"/>", "flag": "<path d=\"M5 21V4M5 4h11l-2 4 2 4H5\"/>", "ticket": "<path d=\"M3 9a2 2 0 0 0 0 6v3h18v-3a2 2 0 0 1 0-6V6H3zM13 6v12\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "upload": "<path d=\"M12 16V4M7 9l5-5 5 5M4 20h16\"/>", "chat": "<path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/>", "sparkles": "<path d=\"m12 3 1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z\"/>"};
+Object.assign(SVG_ICONS, {
+      'eye': '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+      'eyeoff': '<path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.5 6.7C3.8 8.6 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 4-.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+      'chevl': '<path d="m15 6-6 6 6 6"/>', 'chevr': '<path d="m9 6 6 6-6 6"/>',
+      'copy': '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+      'help': '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17v.01"/>'
+    });
     function svgIcon(nome, cls) {
       const p = SVG_ICONS[nome];
       return p ? `<svg class="ic ${cls || ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>` : '';
@@ -511,7 +550,14 @@
     const db = Object.fromEntries(Object.keys(TABELAS).map(t => [t, []]));
     const fotos = { perfil: null, print: null, rel: null };
     let usuarioAtual = null;
-    try { usuarioAtual = JSON.parse(localStorage.getItem("montenegro_usuario")); } catch (e) {}
+    let jaCarregou = false;
+    try { usuarioAtual = JSON.parse(sessionStorage.getItem("montenegro_usuario") || localStorage.getItem("montenegro_usuario")); } catch (e) {}
+    const lembrarAtivo = () => localStorage.getItem("montenegro_lembrar") !== "0";
+    function persistirUsuario() {
+      const json = JSON.stringify(usuarioAtual);
+      if (lembrarAtivo()) { localStorage.setItem("montenegro_usuario", json); sessionStorage.removeItem("montenegro_usuario"); }
+      else { sessionStorage.setItem("montenegro_usuario", json); localStorage.removeItem("montenegro_usuario"); }
+    }
 
     // ===== UTILIDADES =====
     const $ = id => document.getElementById(id);
@@ -610,6 +656,13 @@
     $("dataAtualExtenso").textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     $("loginLogoContainer").appendChild($("tpl-logo").content.cloneNode(true));
     if (localStorage.getItem("montenegro_ultimo_email")) $("emailLogin").value = localStorage.getItem("montenegro_ultimo_email");
+    $("lembrarMe").checked = lembrarAtivo();
+    function alternarSenha() {
+      const campo = $("senhaLogin"), mostrar = campo.type === "password";
+      campo.type = mostrar ? "text" : "password";
+      $("btnVerSenha").innerHTML = '<i data-ic="' + (mostrar ? "eyeoff" : "eye") + '"></i>';
+      $("btnVerSenha").setAttribute("aria-label", mostrar ? "Ocultar senha" : "Mostrar senha");
+    }
 
     window.addEventListener("scroll", () => $("appHeader").classList.toggle("scrolled", window.scrollY > 20));
     setInterval(() => { $("relogioDigital").textContent = new Date().toLocaleTimeString('pt-BR'); }, 1000);
@@ -730,7 +783,7 @@
         btn.disabled = false;
         if (error) return falha('salvar perfil', error);
       }
-      localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
+      persistirUsuario();
       fecharModalPerfil();
       aplicarSessao();
       toast("Perfil atualizado com sucesso!");
@@ -762,7 +815,9 @@
       const email = $("emailLogin").value.trim().toLowerCase();
       const senha = $("senhaLogin").value;
       const tipo = $("tipoAcesso").value;
-      localStorage.setItem("montenegro_ultimo_email", email);
+      const lembrar = $("lembrarMe").checked;
+      localStorage.setItem("montenegro_lembrar", lembrar ? "1" : "0");
+      if (lembrar) localStorage.setItem("montenegro_ultimo_email", email); else localStorage.removeItem("montenegro_ultimo_email");
 
       if (tipo === "admin") {
         if (!email.includes(".admin@montenegro.com") || senha !== "admin123") {
@@ -781,7 +836,7 @@
         usuarioAtual = { email: mot.email, cargo: "motorista", motoristaId: mot.id, nomePersonalizado: mot.nome, bio: "Motorista Montenegro", foto: mot.foto || null };
       }
 
-      localStorage.setItem("montenegro_usuario", JSON.stringify(usuarioAtual));
+      persistirUsuario();
       $("senhaLogin").value = "";
       $("telaLogin").style.display = "none";
       $("telaCarregamento").style.display = "flex";
@@ -790,7 +845,8 @@
 
     $("botaoLogout").addEventListener("click", () => {
       fecharSidebar();
-      localStorage.removeItem("montenegro_usuario");
+      localStorage.removeItem("montenegro_usuario"); sessionStorage.removeItem("montenegro_usuario");
+      jaCarregou = false;
       usuarioAtual = null;
       aplicarSessao();
     });
@@ -810,9 +866,12 @@
       $("cargoUsuarioTag").textContent = usuarioAtual.bio || (ehAdmin() ? 'Administrador' : 'Motorista Montenegro');
       ["secaoAdminPainel", "secaoCadastrarMotoristaAba", "secaoAdminFrota", "secaoAdminComunicado"]
         .forEach(id => $(id).style.display = ehAdmin() ? "block" : "none");
+      $("btnCopiarSemana").style.display = ehAdmin() ? "inline-flex" : "none";
       atualizarAvatarUI();
       trocarAbaGeral('inicio');
+      if (!jaCarregou) mostrarSkeletons();
       sincronizar();
+      if (!localStorage.getItem('montenegro_tour_' + usuarioAtual.email)) setTimeout(abrirTour, 900);
     }
 
     function obterSaudacao() {
@@ -828,11 +887,12 @@
         let q = supabaseClient.from(t).select('*');
         if (ord) q = q.order(ord, { ascending: false });
         const { data, error } = await q;
-        if (error) { console.error(t, error); falhas.push(t); } else db[t] = data || [];
+        if (error) { console.error(t, error); falhas.push(t + ' (' + (error.message || 'erro') + ')'); } else db[t] = data || [];
       }));
       const aviso = $("avisoErro");
       aviso.classList.toggle("hidden", !falhas.length);
-      if (falhas.length) aviso.innerHTML = '<i data-ic="alert"></i> Não foi possível carregar: ' +  + falhas.join(", ") + ". Rode o arquivo supabase_setup.sql no Supabase.";
+      if (falhas.length) aviso.innerHTML = '<i data-ic="alert"></i> Não foi possível carregar: ' + esc(falhas.join('; ')) + '. <button type="button" onclick="sincronizar()" class="underline font-black">Tentar de novo</button>';
+      jaCarregou = true;
       renderTudo();
     }
     setInterval(() => { if (usuarioAtual && !document.hidden) sincronizar(); }, 20000);
@@ -846,7 +906,7 @@
       if (!forcar && sig === ultimaSig) return;
       ultimaSig = sig;
       $("listaMotNomes").innerHTML = db.motoristas.map(m => `<option value="${esc(m.nome)}">`).join('');
-      renderizarResumo(); renderizarEscalas(); renderizarColaboradores(); renderizarFrota(); renderizarComunicados();
+      renderizarResumo(); renderizarGrade(); renderizarEscalas(); renderizarColaboradores(); renderizarFrota(); renderizarComunicados();
       renderizarOcorrencias(); renderizarJustificativas(); renderizarPontos(); renderizarRelatoriosCompartilhados(); atualizarContabilidade(); atualizarBadgesMenu();
       filtrarConteudo($("inputPesquisa").value);
     }
@@ -912,9 +972,222 @@
           </div>`).join('') : vazio('megaphone', 'Sem avisos', 'Quando houver um comunicado, ele aparece aqui.', true));
     }
 
+    // ===== GRADE SEMANAL DE ESCALAS =====
+    const DIAS_ABREV = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const SLOTS = { 'Manhã': ['M'], 'Tarde': ['T'], 'Noite': ['N'], 'Integral': ['M', 'T'], 'Final de Semana': ['M', 'T', 'N'] };
+    function inicioSemana(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+    function addDias(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+    const pad2 = n => String(n).padStart(2, '0');
+    const fmtDM = d => pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1);
+    const fmtBR = d => fmtDM(d) + '/' + d.getFullYear();
+    const isoDe = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    let semanaRef = inicioSemana(new Date());
+
+    function periodoDe(e) {
+      const m = /(\d{2})\/(\d{2})\/(\d{4}).*?(\d{2})\/(\d{2})\/(\d{4})/.exec(e.data || '');
+      return m ? { ini: new Date(+m[3], +m[2] - 1, +m[1]), fim: new Date(+m[6], +m[5] - 1, +m[4]) } : null;
+    }
+    // "04430 ao 04435" vira os 6 carros; "04430, 04432" vira 2
+    function carrosDe(txt) {
+      const out = new Set();
+      const resto = String(txt || '').replace(/(\d+)\s*(?:ao?|-|até)\s*(\d+)/gi, (x, a, b) => {
+        const A = +a, B = +b;
+        if (B >= A && B - A <= 300) for (let n = A; n <= B; n++) out.add(String(n));
+        return ' ';
+      });
+      (resto.match(/\d+/g) || []).forEach(n => out.add(String(+n)));
+      return out;
+    }
+    // compara duas escalas que caem no MESMO dia
+    function conflitoEntre(a, b) {
+      if (a.e.id !== undefined && a.e.id === b.e.id) return null;
+      const sa = SLOTS[a.e.turno] || ['M', 'T', 'N'], sb = SLOTS[b.e.turno] || ['M', 'T', 'N'];
+      if (!sa.some(x => sb.includes(x))) return null;
+      const ma = semAcento(a.e.motorista);
+      if (ma && ma === semAcento(b.e.motorista)) return { tipo: 'motorista' };
+      const cb = carrosDe(b.e.prefixo), comum = [...carrosDe(a.e.prefixo)].filter(c => cb.has(c));
+      return comum.length ? { tipo: 'carro', carros: comum } : null;
+    }
+    function analisarSemana(dias, ativos) {
+      const marc = {}, grupos = new Map();
+      dias.forEach(d => {
+        const doDia = ativos.filter(x => d >= x.per.ini && d <= x.per.fim);
+        for (let i = 0; i < doDia.length; i++) for (let j = i + 1; j < doDia.length; j++) {
+          const c = conflitoEntre(doDia[i], doDia[j]); if (!c) continue;
+          const A = doDia[i].e, B = doDia[j].e;
+          [A, B].forEach(e => (marc[e.id] = marc[e.id] || new Set()).add(c.tipo));
+          const base = c.tipo === 'motorista' ? `${A.motorista} aparece em 2 escalas (${A.turno} e ${B.turno})` : `Carro ${c.carros.join(', ')} em 2 escalas (${A.motorista} e ${B.motorista})`;
+          (grupos.get(base) || grupos.set(base, []).get(base)).push(DIAS_ABREV[d.getDay()]);
+        }
+      });
+      return { marc, msgs: [...grupos].map(([b, ds]) => b + ' — ' + ds.join(', ')) };
+    }
+    function conflitosAoPublicar(nova, ini, fim) {
+      const ativos = db.escalas.map(e => ({ e, per: periodoDe(e) })).filter(x => x.per);
+      const grupos = new Map();
+      let n = 0;
+      for (let d = new Date(ini); d <= fim && n < 366; d = addDias(d, 1), n++) {
+        ativos.forEach(x => {
+          if (d < x.per.ini || d > x.per.fim) return;
+          const c = conflitoEntre({ e: nova }, x); if (!c) return;
+          const base = c.tipo === 'motorista' ? `${x.e.motorista} já está escalado (${x.e.turno}, linha ${x.e.linha}, carro ${x.e.prefixo})` : `Carro ${c.carros.join(', ')} já está com ${x.e.motorista} (${x.e.turno}, linha ${x.e.linha})`;
+          (grupos.get(base) || grupos.set(base, []).get(base)).push(fmtDM(d));
+        });
+      }
+      return [...grupos].map(([b, ds]) => b + ' em ' + (ds.length > 3 ? ds[0] + ' a ' + ds[ds.length - 1] : ds.join(', ')));
+    }
+
+    function mudarSemana(n) { semanaRef = n === 0 ? inicioSemana(new Date()) : addDias(semanaRef, 7 * n); renderizarGrade(); }
+
+    function renderizarGrade() {
+      const dias = Array.from({ length: 7 }, (_, i) => addDias(semanaRef, i));
+      $("rotuloSemana").textContent = fmtDM(dias[0]) + ' – ' + fmtDM(dias[6]);
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const ativos = db.escalas.map(e => ({ e, per: periodoDe(e) })).filter(x => x.per);
+      const { marc, msgs } = analisarSemana(dias, ativos);
+
+      const mapa = new Map();
+      db.motoristas.forEach(m => mapa.set(semAcento(m.nome), m.nome));
+      ativos.forEach(x => { const k = semAcento(x.e.motorista); if (k && !mapa.has(k)) mapa.set(k, x.e.motorista); });
+      let linhas = [...mapa].map(([k, nome]) => ({ k, nome, cel: dias.map(d => ativos.filter(x => semAcento(x.e.motorista) === k && d >= x.per.ini && d <= x.per.fim)) }));
+      if (!$("gradeTodos").checked) linhas = linhas.filter(l => l.cel.some(c => c.length));
+      linhas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+      $("avisoConflitos").innerHTML = msgs.length ? `
+        <div class="rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+          <div class="font-bold flex items-center gap-1.5"><i data-ic="alert"></i> ${msgs.length} conflito(s) nesta semana</div>
+          ${msgs.slice(0, 6).map(m => `<div>• ${esc(m)}</div>`).join('')}${msgs.length > 6 ? `<div>• e mais ${msgs.length - 6}...</div>` : ''}
+        </div>` : '';
+
+      if (!linhas.length) {
+        $("gradeEscalas").innerHTML = vazio('calendar', 'Semana livre', 'Nenhuma escala nesta semana.' + (ehAdmin() ? ' Use "Copiar semana passada" ou publique uma escala na tela inicial.' : ''));
+        return;
+      }
+      const meu = semAcento(nomeAtual());
+      $("gradeEscalas").innerHTML = `
+        <table class="w-full min-w-[46rem] border-separate border-spacing-1 text-left">
+          <thead><tr>
+            <th class="sticky left-0 z-10 bg-white dark:bg-slate-800 p-2 text-[10px] uppercase text-slate-400 font-bold">Motorista</th>
+            ${dias.map(d => `<th class="p-2 text-center rounded-xl ${d.getTime() === hoje.getTime() ? 'bg-lime-100 dark:bg-lime-900/30 text-lime-800 dark:text-lime-200' : 'text-slate-500'}">
+              <div class="text-[10px] font-bold uppercase">${DIAS_ABREV[d.getDay()]}</div><div class="text-xs font-black">${fmtDM(d)}</div></th>`).join('')}
+          </tr></thead>
+          <tbody>${linhas.map(l => `<tr>
+            <td class="sticky left-0 z-10 bg-white dark:bg-slate-800 p-2 text-xs font-bold max-w-[8rem] truncate ${meu && (l.k === meu || meu.includes(l.k)) ? 'text-lime-700 dark:text-lime-300' : ''}">${esc(l.nome)}</td>
+            ${l.cel.map((itens, i) => `<td class="align-top p-0.5 min-w-[6.5rem]">${itens.length ? itens.map(x => {
+              const cf = marc[x.e.id];
+              const cls = cf ? 'bg-red-50 dark:bg-red-950/40 ring-1 ring-red-300 dark:ring-red-800 text-red-700 dark:text-red-300' : 'bg-lime-50 dark:bg-lime-900/25 text-lime-800 dark:text-lime-200';
+              return `<div class="rounded-xl px-2 py-1 mb-0.5 text-[10px] leading-tight ${cls}" title="${esc(x.e.turno)} • Linha ${esc(x.e.linha)} • Carro ${esc(x.e.prefixo)}">
+                <div class="font-black uppercase tracking-wide">${esc(x.e.turno === 'Final de Semana' ? 'FDS' : x.e.turno)}${cf ? ' <i data-ic="alert"></i>' : ''}</div>
+                <div class="truncate max-w-[6rem]">L ${esc(x.e.linha)} · ${esc(x.e.prefixo)}</div></div>`; }).join('')
+              : (ehAdmin() ? `<button data-nome="${esc(l.nome)}" data-dia="${isoDe(dias[i])}" onclick="preencherEscala(this)" title="Adicionar escala" class="w-full h-9 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-300 hover:text-lime-600 hover:border-lime-400 flex items-center justify-center"><i data-ic="plus"></i></button>` : '<div class="h-9"></div>')}</td>`).join('')}
+          </tr>`).join('')}</tbody>
+        </table>`;
+    }
+
+    function preencherEscala(btn) {
+      $("adminMotoristaInput").value = btn.dataset.nome;
+      $("adminDataInicio").value = btn.dataset.dia;
+      $("adminDataFim").value = btn.dataset.dia;
+      trocarAbaGeral('inicio');
+      setTimeout(() => { $("formEscalaAdmin").scrollIntoView({ behavior: 'smooth', block: 'center' }); $("adminLinha").focus({ preventScroll: true }); }, 80);
+    }
+
+    async function copiarSemanaPassada(btn) {
+      const pIni = addDias(semanaRef, -7), pFim = addDias(semanaRef, -1);
+      const novas = [];
+      db.escalas.forEach(e => {
+        const per = periodoDe(e);
+        if (!per || per.fim < pIni || per.ini > pFim) return;
+        const ni = addDias(per.ini < pIni ? pIni : per.ini, 7), nf = addDias(per.fim > pFim ? pFim : per.fim, 7);
+        const igual = x => x.motorista === e.motorista && x.turno === e.turno && x.linha === e.linha && x.prefixo === e.prefixo;
+        const jaCobre = db.escalas.some(x => { const q = periodoDe(x); return q && igual(x) && q.ini <= ni && q.fim >= nf; });
+        if (!jaCobre) novas.push({ data: fmtBR(ni) + ' até ' + fmtBR(nf), turno: e.turno, motorista: e.motorista, linha: e.linha, prefixo: e.prefixo, tipo: 'Período' });
+      });
+      if (!novas.length) { toast('Nada novo para copiar da semana passada.'); return; }
+      if (!confirm('Copiar ' + novas.length + ' escala(s) de ' + fmtDM(pIni) + '–' + fmtDM(pFim) + ' para ' + fmtDM(semanaRef) + '–' + fmtDM(addDias(semanaRef, 6)) + '?')) return;
+      const orig = btn.innerHTML; btn.disabled = true; btn.textContent = 'Copiando...';
+      const { error } = await supabaseClient.from('escalas').insert(novas);
+      btn.disabled = false; btn.innerHTML = orig;
+      if (error) return falha('copiar a semana', error);
+      toast(novas.length + ' escala(s) copiadas');
+      await sincronizar();
+    }
+
+    // ===== CARREGAMENTO (blocos cinzas) =====
+    const skel = (n, h) => Array.from({ length: n }, () => `<div class="skel ${h} rounded-3xl"></div>`).join('');
+    function mostrarSkeletons() {
+      const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+      set('listaEscalas', skel(3, 'h-24')); set('listaFrota', skel(3, 'h-24')); set('listaColaboradores', skel(4, 'h-20'));
+      set('listaComunicados', skel(2, 'h-28')); set('listaOcorrencias', skel(2, 'h-20')); set('listaJustificativas', skel(2, 'h-20'));
+      set('listaRelatoriosCompartilhados', skel(2, 'h-52'));
+      ['resEscala', 'resPonto', 'resAvisos'].forEach(id => set(id, '<div class="skel h-10 w-2/3 rounded-2xl"></div><div class="skel h-20 rounded-2xl"></div>'));
+      set('gradeEscalas', '<div class="space-y-2 p-2">' + skel(4, 'h-12') + '</div>');
+    }
+
+    // ===== TOUR DO PRIMEIRO ACESSO =====
+    const TOUR = [
+      { i: 'clock', t: 'Bata o ponto', d: () => 'Na aba Ponto, registre a entrada, o almoço e o fim do turno. O horário fica salvo para a administração.' },
+      { i: 'chart', t: 'Envie o relatório da viagem', d: () => 'Informe os passageiros (inteira e meia), os KM e anexe o print. O relatório aparece para toda a equipe.' },
+      { i: 'calendar', t: 'Confira a escala', d: () => ehAdmin() ? 'Monte a semana na grade de Escalas, copie a semana passada com um toque e veja os avisos de conflito de motorista e carro.' : 'Em Escalas, a grade da semana mostra onde você está escalado. Na tela inicial, o resumo do dia mostra a escala de hoje.' }
+    ];
+    let tourPasso = 0;
+    function abrirTour() { tourPasso = 0; $("tour").classList.replace('hidden', 'flex'); renderTour(); }
+    function fecharTour() {
+      $("tour").classList.replace('flex', 'hidden');
+      if (usuarioAtual) localStorage.setItem('montenegro_tour_' + usuarioAtual.email, '1');
+    }
+    function proximoTour() { if (tourPasso >= TOUR.length - 1) return fecharTour(); tourPasso++; renderTour(); }
+    function renderTour() {
+      const p = TOUR[tourPasso], ultimo = tourPasso === TOUR.length - 1;
+      $("tourConteudo").innerHTML = `
+        <div class="w-16 h-16 mx-auto rounded-3xl bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-300 flex items-center justify-center text-3xl"><i data-ic="${p.i}"></i></div>
+        <div class="space-y-1.5 text-center"><h3 class="font-black text-lg">${p.t}</h3><p class="text-sm text-slate-500 dark:text-slate-400">${p.d()}</p></div>
+        <div class="flex justify-center gap-1.5">${TOUR.map((_, i) => `<span class="h-1.5 rounded-full transition-all ${i === tourPasso ? 'w-6 bg-lime-500' : 'w-1.5 bg-slate-300 dark:bg-slate-600'}"></span>`).join('')}</div>
+        <div class="flex gap-2">
+          <button onclick="fecharTour()" class="flex-1 py-3 rounded-2xl text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700">Pular</button>
+          <button onclick="proximoTour()" class="btn flex-1 py-3 bg-lime-600 hover:bg-lime-700">${ultimo ? 'Começar' : 'Próximo'}</button>
+        </div>`;
+    }
+
+    // ===== PUXAR PARA ATUALIZAR (celular) =====
+    (function () {
+      const ind = $("ptr");
+      let y0 = null, dist = 0, puxando = false, ocupado = false;
+      const bloqueado = () => !usuarioAtual || ocupado || $("modalPerfil").classList.contains('flex') || $("tour").classList.contains('flex') || !$("sidebarMenu").classList.contains('opacity-0');
+      const resetar = () => { ind.style.transition = 'transform .25s ease, opacity .25s ease'; ind.style.opacity = 0; ind.style.transform = 'translate(-50%, -56px)'; puxando = false; y0 = null; dist = 0; };
+      window.addEventListener('touchstart', e => { y0 = (window.scrollY <= 0 && !bloqueado()) ? e.touches[0].clientY : null; ind.style.transition = 'none'; }, { passive: true });
+      window.addEventListener('touchmove', e => {
+        if (y0 === null) return;
+        dist = e.touches[0].clientY - y0;
+        if (dist > 8 && window.scrollY <= 0) {
+          puxando = true;
+          const d = Math.min(dist * 0.5, 70);
+          ind.style.opacity = Math.min(1, d / 40);
+          ind.style.transform = `translate(-50%, ${d - 40}px) rotate(${d * 5}deg)`;
+        } else if (puxando) { resetar(); }
+      }, { passive: true });
+      window.addEventListener('touchcancel', resetar, { passive: true });
+      window.addEventListener('touchend', async () => {
+        if (!puxando) { y0 = null; return; }
+        if (dist * 0.5 < 50) { resetar(); return; }
+        ocupado = true;
+        ind.style.transition = 'transform .2s ease';
+        ind.style.transform = 'translate(-50%, 16px)';
+        const icone = ind.firstElementChild; if (icone) icone.classList.add('animate-spin');
+        await sincronizar();
+        if (icone) icone.classList.remove('animate-spin');
+        ocupado = false; resetar(); toast('Atualizado');
+      });
+    })();
+
     // ===== ESCALAS =====
     $("formEscalaAdmin").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const iso2d = iso => { const [a, m, d] = iso.split('-'); return new Date(+a, +m - 1, +d); };
+      const ini = iso2d($("adminDataInicio").value), fim = iso2d($("adminDataFim").value);
+      if (fim < ini) { alert("A data de encerramento não pode ser antes do início."); return; }
+      const conf = conflitosAoPublicar({ turno: $("adminTurno").value, motorista: $("adminMotoristaInput").value.trim(), prefixo: $("adminPrefixo").value.trim() }, ini, fim);
+      if (conf.length && !confirm("Atenção: esta escala conflita com:\n\n- " + conf.slice(0, 5).join("\n- ") + (conf.length > 5 ? "\n- e mais " + (conf.length - 5) + "..." : "") + "\n\nPublicar mesmo assim?")) return;
       const ok = await inserir('escalas', {
         data: `${dataBR($("adminDataInicio").value)} até ${dataBR($("adminDataFim").value)}`,
         turno: $("adminTurno").value, motorista: $("adminMotoristaInput").value.trim(),
