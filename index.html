@@ -458,7 +458,7 @@
     </div>
 
     <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 pb-8">
-      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v2.3.1</strong></div>
+      <div class="font-semibold">Viação Montenegro • Versão do App: <strong>v2.4.1</strong></div>
       <div class="flex items-center gap-4">
         <a href="https://www.instagram.com/grupo.souza_/" target="_blank" rel="noopener" class="hover:text-blue-500 font-bold"><i data-ic="camera"></i> Instagram da Empresa</a><span>•</span>
         <a href="https://chat.whatsapp.com/FrHcSQKZ8ST77B0c5vTXJP" target="_blank" rel="noopener" class="hover:text-emerald-500 font-bold"><i data-ic="chat"></i> Grupo do WhatsApp</a>
@@ -545,8 +545,18 @@ Object.assign(SVG_ICONS, {
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // tabela -> coluna de ordenação (null = sem ordenação)
-    const TABELAS = { escalas: null, motoristas: null, relatorios: 'created_at', prints: 'created_at', comunicados: 'created_at',
-                      ocorrencias: 'created_at', justificativas: 'created_at', frota: 'created_at', pontos: 'created_at' };
+    // colunas leves: as fotos (base64) NÃO vêm na lista, são buscadas depois, uma a uma
+    const TABELAS = {
+      escalas: { cols: '*' },
+      motoristas: { cols: 'id,nome,email' },
+      relatorios: { cols: 'id,created_at,autor,autor_email,linha,prefixo,catracados,meia,km,data_br,hora_br', ord: 'created_at' },
+      prints: { cols: 'id,created_at,motorista,autor_email,estagio,linha,prefixo,quilometragem,data_br,hora_br', ord: 'created_at', lim: 60 },
+      comunicados: { cols: '*', ord: 'created_at', lim: 100 },
+      ocorrencias: { cols: '*', ord: 'created_at', lim: 200 },
+      justificativas: { cols: '*', ord: 'created_at', lim: 200 },
+      frota: { cols: '*', ord: 'created_at' },
+      pontos: { cols: '*', ord: 'created_at', lim: 300 }
+    };
     const db = Object.fromEntries(Object.keys(TABELAS).map(t => [t, []]));
     const fotos = { perfil: null, print: null, rel: null };
     let usuarioAtual = null;
@@ -600,15 +610,16 @@ Object.assign(SVG_ICONS, {
       t._t = setTimeout(() => { t.style.display = 'none'; }, 2600);
     }
 
-    async function remover(tabela, id) {
-      if (!confirm("Tem certeza que deseja excluir?")) return;
+    async function remover(tabela, id, msg) {
+      if (!confirm(msg || "Tem certeza que deseja excluir?")) return;
       const { error } = await supabaseClient.from(tabela).delete().eq('id', id);
       if (error) return falha('excluir', error);
+      toast('Excluído');
       sincronizar();
     }
 
     // reduz a foto antes de enviar (evita estourar o limite do banco)
-    function comprimirImagem(file, max = 1000, q = 0.72) {
+    function comprimirImagem(file, max = 900, q = 0.65) {
       return new Promise((res, rej) => {
         const r = new FileReader();
         r.onerror = rej;
@@ -632,7 +643,7 @@ Object.assign(SVG_ICONS, {
       const arq = input.files && input.files[0];
       if (!arq) return;
       try {
-        fotos[chave] = await comprimirImagem(arq, chave === 'perfil' ? 300 : 1000);
+        fotos[chave] = await comprimirImagem(arq, chave === 'perfil' ? 256 : 900);
       } catch (e) { alert("Não foi possível ler essa imagem."); return; }
       if (idNome) $(idNome).textContent = arq.name;
       const p = $(idPreview);
@@ -783,6 +794,7 @@ Object.assign(SVG_ICONS, {
         btn.disabled = false;
         if (error) return falha('salvar perfil', error);
       }
+      if (usuarioAtual.motoristaId && usuarioAtual.foto) imgCache['motoristas:' + usuarioAtual.motoristaId] = usuarioAtual.foto;
       persistirUsuario();
       fecharModalPerfil();
       aplicarSessao();
@@ -880,14 +892,56 @@ Object.assign(SVG_ICONS, {
     }
 
     // ===== SINCRONIZAÇÃO =====
+    // ===== IMAGENS SOB DEMANDA =====
+    const imgCache = {};
+    let limRel = 40;
+    const filaImg = []; let ativosImg = 0;
+    function pedirImagem(tabela, id, campo) {
+      const k = tabela + ':' + id;
+      if (k in imgCache) return Promise.resolve(imgCache[k]);
+      return new Promise(res => { filaImg.push({ tabela, id, campo, k, res }); rodarFila(); });
+    }
+    function rodarFila() {
+      while (ativosImg < 3 && filaImg.length) {
+        const t = filaImg.shift(); ativosImg++;
+        Promise.resolve(supabaseClient.from(t.tabela).select(t.campo).eq('id', t.id).maybeSingle())
+          .then(({ data, error }) => { const v = (!error && data && data[t.campo]) || ''; if (!error) imgCache[t.k] = v; t.res(v); })
+          .catch(() => t.res(''))
+          .finally(() => { ativosImg--; rodarFila(); });
+      }
+    }
+    function imgLazy(tabela, id, campo, cls, alt, h) {
+      const v = imgCache[tabela + ':' + id];
+      if (v !== undefined) return v ? `<img src="${esc(v)}" alt="${esc(alt)}" class="${cls}">` : '';
+      return `<div class="skel ${h} rounded-2xl" data-lazy="${tabela}|${id}|${campo}|img" data-cls="${cls}" data-alt="${esc(alt)}"></div>`;
+    }
+    async function hidratarLazy(el) {
+      const [tabela, id, campo, modo] = el.dataset.lazy.split('|');
+      const v = await pedirImagem(tabela, id, campo);
+      if (!el.isConnected) return;
+      if (modo === 'bg') { if (v) { el.style.backgroundImage = `url('${v}')`; el.textContent = ''; } el.removeAttribute('data-lazy'); return; }
+      if (!v) { el.remove(); return; }
+      const img = new Image(); img.src = v; img.alt = el.dataset.alt || ''; img.className = el.dataset.cls || '';
+      el.replaceWith(img);
+    }
+    const obsImg = 'IntersectionObserver' in window
+      ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { obsImg.unobserve(e.target); hidratarLazy(e.target); } }), { rootMargin: '250px' })
+      : null;
+    function observarLazy() { document.querySelectorAll('[data-lazy]').forEach(el => obsImg ? obsImg.observe(el) : hidratarLazy(el)); }
+
     async function sincronizar() {
       if (!usuarioAtual) return;
       const falhas = [];
-      await Promise.all(Object.entries(TABELAS).map(async ([t, ord]) => {
-        let q = supabaseClient.from(t).select('*');
-        if (ord) q = q.order(ord, { ascending: false });
-        const { data, error } = await q;
-        if (error) { console.error(t, error); falhas.push(t + ' (' + (error.message || 'erro') + ')'); } else db[t] = data || [];
+      await Promise.all(Object.entries(TABELAS).map(async ([t, cfg]) => {
+        const consulta = () => {
+          let q = supabaseClient.from(t).select(cfg.cols);
+          if (cfg.ord) q = q.order(cfg.ord, { ascending: false });
+          if (cfg.lim) q = q.limit(cfg.lim);
+          return q;
+        };
+        let res = await consulta();
+        if (res.error) { await new Promise(r => setTimeout(r, 800)); res = await consulta(); }
+        if (res.error) { console.error(t, res.error); falhas.push(t + ' (' + (res.error.message || 'erro') + ')'); } else db[t] = res.data || [];
       }));
       const aviso = $("avisoErro");
       aviso.classList.toggle("hidden", !falhas.length);
@@ -902,12 +956,13 @@ Object.assign(SVG_ICONS, {
       $("totalEscalas").textContent = db.escalas.length;
       $("totalMotoristas").textContent = db.motoristas.length;
       // só redesenha quando os dados mudaram (evita piscar a cada atualização automática)
-      const sig = Object.entries(db).map(([t, a]) => t + ':' + a.map(r => r.id + '|' + (r.nome || '') + (r.foto ? r.foto.length : '')).join(',')).join(';');
+      const sig = Object.entries(db).map(([t, a]) => t + ':' + a.map(r => r.id + '|' + (r.nome || '')).join(',')).join(';');
       if (!forcar && sig === ultimaSig) return;
       ultimaSig = sig;
       $("listaMotNomes").innerHTML = db.motoristas.map(m => `<option value="${esc(m.nome)}">`).join('');
       renderizarResumo(); renderizarGrade(); renderizarEscalas(); renderizarColaboradores(); renderizarFrota(); renderizarComunicados();
       renderizarOcorrencias(); renderizarJustificativas(); renderizarPontos(); renderizarRelatoriosCompartilhados(); atualizarContabilidade(); atualizarBadgesMenu();
+      observarLazy();
       filtrarConteudo($("inputPesquisa").value);
     }
 
@@ -955,7 +1010,8 @@ Object.assign(SVG_ICONS, {
         const u = db.pontos.find(p => p.autor_email === usuarioAtual.email);
         corpoPonto = u ? `<div class="rounded-2xl bg-slate-50 dark:bg-slate-900 p-3 space-y-0.5">
             <div class="text-lg font-black">${esc(u.tipo)}</div>
-            <div class="text-[11px] text-slate-400">${u.data_br === hoje ? 'Hoje' : esc(u.data_br)} às ${esc(u.hora_br)}</div></div>`
+            <div class="text-[11px] text-slate-400">${u.data_br === hoje ? 'Hoje' : esc(u.data_br)} às ${esc(u.hora_br)}</div>
+            <button onclick="remover('pontos','${u.id}','Apagar este registro de ponto?')" class="del mt-2"><i data-ic="trash"></i> Apagar este ponto</button></div>`
           : vazio('clock', 'Nenhum ponto ainda', 'Registre a entrada do seu turno.', true);
       }
       $("resPonto").innerHTML = cabCard('clock', ehAdmin() ? 'Pontos de hoje' : 'Último ponto') + corpoPonto + (ehAdmin() ? '' : botao);
@@ -1226,7 +1282,7 @@ Object.assign(SVG_ICONS, {
         <div class="card p-4 flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 overflow-hidden">
             <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 bg-cover bg-center border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0"
-                 ${m.foto ? `style="background-image:url('${esc(m.foto)}')"` : ''}>${m.foto ? '' : '<i data-ic="user"></i>'}</div>
+                 ${imgCache['motoristas:' + m.id] ? `style="background-image:url('${esc(imgCache['motoristas:' + m.id])}')"` : `data-lazy="motoristas|${m.id}|foto|bg"`}>${imgCache['motoristas:' + m.id] ? '' : '<i data-ic="user"></i>'}</div>
             <div class="overflow-hidden">
               <div class="font-bold text-xs truncate">${esc(m.nome)}</div>
               <div class="text-[10px] text-slate-400 truncate">${esc(m.email)}</div>
@@ -1343,9 +1399,10 @@ Object.assign(SVG_ICONS, {
     });
     function renderizarPontos() {
       const lista = (ehAdmin() ? db.pontos : db.pontos.filter(p => p.autor_email === usuarioAtual.email)).slice(0, 30);
-      $("listaPontos").innerHTML = lista.map(p => `
-        <div class="text-[11px] flex justify-between bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2">
-          <span><strong>${ehAdmin() ? esc(p.motorista) + ' • ' : ''}${esc(p.tipo)}</strong></span><span class="text-slate-400">${esc(p.data_br)} ${esc(p.hora_br)}</span>
+      $("listaPontos").innerHTML = !lista.length ? '<div class="text-[11px] text-slate-400 text-center py-2">Nenhum ponto registrado ainda.</div>' : lista.map(p => `
+        <div class="text-[11px] flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2">
+          <div class="min-w-0"><strong class="block truncate">${ehAdmin() ? esc(p.motorista) + ' • ' : ''}${esc(p.tipo)}</strong><span class="text-slate-400">${esc(p.data_br)} ${esc(p.hora_br)}</span></div>
+          ${podeExcluir(p.autor_email) ? `<button onclick="remover('pontos','${p.id}','Apagar este registro de ponto?')" class="del" title="Apagar este ponto"><i data-ic="trash"></i> Apagar</button>` : ''}
         </div>`).join('');
     }
 
@@ -1380,7 +1437,7 @@ Object.assign(SVG_ICONS, {
     });
 
     function renderizarRelatoriosCompartilhados() {
-      let html = db.relatorios.map(r => `
+      let html = db.relatorios.slice(0, limRel).map(r => `
         <div class="card p-6 space-y-4">
           <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2 gap-2">
             <div>
@@ -1395,7 +1452,7 @@ Object.assign(SVG_ICONS, {
             <div><i data-ic="road"></i> KM: <strong>${r.km || 0}</strong></div>
             <div><i data-ic="wallet"></i> <strong class="text-emerald-500">${brl(fatur(r))}</strong></div>
           </div>
-          ${r.url_imagem ? `<img src="${esc(r.url_imagem)}" alt="Print da viagem" class="w-full max-h-80 object-contain rounded-2xl border dark:border-slate-700 bg-slate-50 dark:bg-slate-900">` : ''}
+          ${imgLazy('relatorios', r.id, 'url_imagem', 'w-full max-h-80 object-contain rounded-2xl border dark:border-slate-700 bg-slate-50 dark:bg-slate-900', 'Print da viagem', 'h-48')}
         </div>`).join('');
 
       const grupos = {};
@@ -1420,11 +1477,12 @@ Object.assign(SVG_ICONS, {
                   <div class="flex items-center gap-1.5"><span class="text-[10px] text-slate-400">${esc(i.hora_br)}</span>
                     ${podeExcluir(i.autor_email) ? `<button onclick="remover('prints','${i.id}')" class="del" title="Excluir print"><i data-ic="trash"></i></button>` : ''}</div>
                 </div>
-                <img src="${esc(i.url_imagem)}" alt="${esc(i.estagio)}" class="w-full h-36 object-cover rounded-xl border dark:border-slate-700">
+                ${imgLazy('prints', i.id, 'url_imagem', 'w-full h-36 object-cover rounded-xl border dark:border-slate-700', i.estagio, 'h-36')}
               </div>`).join('')}
           </div>
         </div>`).join('');
 
+      if (db.relatorios.length > limRel) html += `<div class="text-center"><button type="button" onclick="limRel += 40; renderizarRelatoriosCompartilhados(); observarLazy();" class="btn px-5 py-2.5 bg-slate-700 hover:bg-slate-800">Ver mais relatórios (${db.relatorios.length - limRel})</button></div>`;
       $("listaRelatoriosCompartilhados").innerHTML = html || `${vazio('camera','Nada compartilhado ainda','Relatórios e prints de viagem postados pela equipe aparecem aqui.')}`;
     }
 
